@@ -1,0 +1,17 @@
+url: http://isabelfulcher.github.io/autognet
+
+templates:
+  params:
+    bootswatch: flatly
+
+navbar:
+  left:
+  - text: Vignette
+    href: articles/gchromVAR_vignette.html
+  - text: Reference
+    href: reference/index.html
+  - text: Manuscripts
+    href: https://arxiv.org/abs/1709.01577
+  - text: GitHub
+    icon: fa-github
+    href: https://github.com/isabelfulcher/autognet

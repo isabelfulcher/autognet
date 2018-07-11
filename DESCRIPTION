@@ -1,0 +1,24 @@
+Package: autognet
+Title: Estimation of causal network effects
+Description: R utility package for color mapping and plot aesthetics.
+Date: 2018-07-20
+Version: 0.0.1
+Authors@R: c(
+    person("Isabel", "Fulcher", email = "isabelfulcher@g.harvard.edu", role = c("aut", "cre")),
+    person("Caleb", "Lareau", email = "caleblareau@g.harvard.edu", role = c("aut"))
+    )
+Depends:
+    R (>= 3.0)
+License: MIT
+LazyData: true
+Suggests:
+    knitr
+URL: https://github.com/isabelfulcher/autognet
+BugReports: https://github.com/isabelfulcher/autognet/issues
+RoxygenNote: 6.0.1
+Collate: 
+    'BuenColors.R'
+    'colors.R'
+    'plotHelp.R'
+    'cell_colors.R'
+VignetteBuilder: knitr
