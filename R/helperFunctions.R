@@ -1,3 +1,5 @@
+#' @include autognet.R
+NULL
 
 # Internal function that potentially expands
 # a data frame given a multinomial covariate
@@ -80,4 +82,41 @@
 
   return(listOut)
 }
+
+
+# create coverage intervals
+cov_int <- function(x) {
+  return(quantile(x,probs=c(.025,.975)))
+}
+
+# to check convergence
+psr <- function(samples) {
+  ##
+  R <- nrow(samples)
+  ##
+  B <- R * var(apply(samples, 2, mean))
+  W <- mean(apply(samples, 2, var))
+  ##
+  value <- sqrt((B + (R-1)*W) / (R*W))
+  return(value)
+}
+
+# Helper function for getting a sum weighted
+# by neighbor values -- specific to these internal data structures
+get_sum <- function(idx, l_grid, tau, rho, n){
+
+  # Establish Ls for this iteration
+  l_vec <- l_grid[idx,]
+
+  # Izzie / Caleb formulation of sum--
+  # Make a temporary matrix; fill by row so have to transpose later
+  # see https://stackoverflow.com/questions/30787317/a-vector-to-an-upper-triangle-matrix-by-row-in-r
+  temp_m <- matrix(0, n, n); temp_m[lower.tri(temp_m, diag=FALSE)] <- rho
+
+  # intercept             main
+  exp((tau%*%l_vec)[1,1] + sum(l_vec %*% t(l_vec) * t(temp_m)))
+}
+
+# vectorize the above over the index of the individual in the network
+v_get_sum <- Vectorize(get_sum, "idx")
 

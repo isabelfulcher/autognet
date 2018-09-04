@@ -1,0 +1,434 @@
+#' @include helperFunctions.R
+NULL
+
+################################################
+##### SET 1: AUXILARY VARIABLE CALCULATION #####
+################################################
+
+## 1.1 COVARIATE MODELS ##
+aux.var.cl <- function(tau, rho, nu, N, R,
+                       adjacency, start, weights, group_lengths, group_functions){
+
+  # Help initializing values
+  if(FALSE){
+    tau <- tau.p
+    rho <- rho.p
+    nu <- nu.p
+    start <- cov.i
+    R <- 10
+  }
+
+  cov.mat <- start
+
+  # Number of covariates
+  J <- dim(cov.mat)[2]
+
+  # Make symmetrical matrix of the rho values
+  rho_mat <- matrix(0, nrow = J, ncol = J)
+  rho_mat[lower.tri(rho_mat, diag=FALSE)] <- rho; rho_mat <- rho_mat + t(rho_mat)
+
+  # Number of iterations
+  for (r in 1:R){
+
+    # Number of people
+    for (i in 1:N){
+
+      # Index covariate
+      j <- 1
+
+      # Number of groups (of covariants)
+      for (group_index in 1:length(group_lengths)){
+
+        # Values associated with each group
+        group_length <- group_lengths[group_index]
+        group_function <- group_functions[group_index]
+
+        # group_length is the number of binarized covariates
+        # group_function is a numeric dictionary key that utilizes a value from the covariate_process function
+        # if group_length is > 1, meaning that we have multiple binarized covariates associated with a specific
+        # entity, then it is definitely a multinomial
+        if(group_length > 1){
+
+          # Multinomial case
+          prob_vec <- sapply(0:(group_length -1), function(m){
+            j_prime <- j + m
+            exp(tau[j_prime] + sum(rho_mat[,j_prime]*cov.mat[i,]) + nu[j_prime]*sum(cov.mat[adjacency[[i]],j_prime]/weights[i]))
+          })
+
+          # for the rmultinom call, have to append a 1 and remove the last value; update several values
+          cov.mat[i, j + (0:(group_length -1))] <- (rmultinom(1,1,c(prob_vec,1))[,1])[-1*group_length]
+
+        } else if(group_function == 1){
+
+          # Logistic / binary case
+          prob_Lj <- plogis(tau[j] + sum(rho_mat[,j]*cov.mat[i,]) + nu[j]*sum(cov.mat[adjacency[[i]],j]/weights[i]))
+          cov.mat[i,j] <- rbinom(1,1,prob_Lj)
+        } # add in normal here once form is decide
+
+        j <- j + group_length
+
+      }
+    }
+  }
+  return(cov.mat)
+}
+
+# 1.2 OUTCOME MODEL #
+
+aux.var.outcome.cl <- function(beta,trt,cov,N,R,adjacency,start,weights){
+  # beta is vector of parameters for outcome model (beta.p in 04a)
+  # trt is Nx1 matrix of treatment values (trt.i in 04a)
+  # cov is a Nxp matrix of covariate values (cov.i in 04a)
+  # N is number of individuals in network THAT HAVE AT LEAST ONE NEIGHBOR
+  # R is number of iterations to run through
+  # adjacency is a list of length N with neighbor IDs for each individual
+  # start is starting point for chain (outcome.i in 04a)
+  # weights is a vector of length N with the number of neighbors for each individual
+
+  vec <- start
+  prob_y <- NA
+
+  for (r in 1:R){
+    for (i in 1:N){
+      prob_outcome <- plogis(beta[1] + # intercept term
+                               beta[2]*trt[i] + # individual treatment term
+                               beta[3:(2+ncol(cov))]%*%cov[i,] + # individual covariate term(s)
+                               beta[(3+ncol(cov))]*sum(vec[adjacency[[i]]]/weights[i]) + # neighbor outcome
+                               beta[(4+ncol(cov))]*sum(trt[adjacency[[i]]]/weights[i]) + # neighbor treatment
+                               sum(beta[(4+ncol(cov)+(1:ncol(cov)))]*colSums(cov[adjacency[[i]],(1:ncol(cov)),drop = FALSE]/weights[i])) # neighbor covariate
+      )
+
+      # Isabel's sapply for the neighbor covariate line above
+      # sum(sapply(1:ncol(cov),function(x){beta[(4+ncol(cov)+x)]*colSums(cov[adjacency[[i]],x]/weights[i])}))
+
+      vec[i] <- rbinom(1,1,prob_outcome)
+    }
+  }
+  return(vec)
+}
+
+
+
+#######################################################
+##### SET 3: GIBBS SAMPLER FOR CAUSAL ESTIMANDS #######
+#######################################################
+
+## 3.1 CAUSAL ESTIMANDS IN BAYES PROCEDURE ##
+#i.e. only need one chain as output
+network.gibbs3.cl <- function(tau, rho, nu,
+                              beta, ncov, R, N, p, adjacency, weights,
+                              group_lengths, group_functions){
+
+  # tau is a vector of length ncov
+  # rho is a vector of lenth choose(ncov,2)
+  # nu is a vector of length ncov
+  # beta is a vector of length P
+  # ncov is the number of covariates
+  # R is the number of iterations
+  # N is the total network size (includes indep and non indep)
+  # p is the treatment allocation
+  # adjacency is a list of neighbors for each pesron (only non indep nodes)
+  # weights are the weights for each person (includes indep and non indep)
+
+  J <- ncov # easier way to ref the number of covariates; it's ncov in the code
+
+  #storage
+  prob_outcome_1 <- NA #this is the E(Y_i(a)), or beta
+  DE <- NA #this is direct effect on the individual
+  SE <- NA #this is spillover effect on the individual
+
+  #Make symmetrical matrix of the rho values (needed for covariate iterations)
+  rho_mat <- matrix(0, nrow = J, ncol = J)
+  rho_mat[lower.tri(rho_mat, diag=FALSE)] <- rho; rho_mat <- rho_mat + t(rho_mat)
+
+  #starting values
+  outcome <- rbinom(N,1,runif(1,.1,.9))
+  cov_mat <- matrix(rbinom(N*J, 1, runif(J,.1,.9)),N,J)
+
+  for (r in 1:R){
+
+    #Gibbs (conditional probabilities for each person)
+    for (i in 1:N){
+
+      if(weights[i] > 0){
+        #Generate L
+        j <- 1
+        # Number of groups (of covariants)
+        for (group_index in 1:length(group_lengths)){
+
+          # Values associated with each group
+          group_length <- group_lengths[group_index]
+          group_function <- group_functions[group_index]
+
+          # group_length is the number of binarized covariates
+          # group_function is a numeric dictionary key that utilizes a value from the covariate_process function
+          # if group_length is > 1, meaning that we have multiple binarized covariates associated with a specific
+          # entity, then it is definitely a multinomial
+          if(group_length > 1){
+
+            # Multinomial case
+            prob_vec <- sapply(0:(group_length -1), function(m){
+              j_prime <- j + m
+              exp(tau[j_prime] + sum(rho_mat[,j_prime]*cov_mat[i,]) + nu[j_prime]*sum(cov_mat[adjacency[[i]],j_prime]/weights[i]))
+            })
+
+            # for the rmultinom call, have to append a 1 and remove the last value; update several values
+            cov_mat[i, j + (0:(group_length -1))] <- (rmultinom(1,1,c(prob_vec,1))[,1])[-1*group_length]
+
+          } else if(group_function == 1){
+
+            # Logistic / binary case
+            prob_Lj <- plogis(tau[j] + sum(rho_mat[,j]*cov_mat[i,]) + nu[j]*sum(cov_mat[adjacency[[i]],j]/weights[i]))
+            cov_mat[i,j] <- rbinom(1,1,prob_Lj)
+          } # add in normal here once form is decide
+
+          j <- j + group_length
+
+        }
+      } else {
+        #Generate L
+        j <- 1
+        # Number of groups (of covariants)
+        for (group_index in 1:length(group_lengths)){
+
+          # Values associated with each group
+          group_length <- group_lengths[group_index]
+          group_function <- group_functions[group_index]
+
+          # group_length is the number of binarized covariates
+          # group_function is a numeric dictionary key that utilizes a value from the covariate_process function
+          # if group_length is > 1, meaning that we have multiple binarized covariates associated with a specific
+          # entity, then it is definitely a multinomial
+          if(group_length > 1){
+
+            # Multinomial case
+            prob_vec <- sapply(0:(group_length -1), function(m){
+              j_prime <- j + m
+              exp(tau[j_prime] + sum(rho_mat[,j_prime]*cov_mat[i,]))
+            })
+
+            # for the rmultinom call, have to append a 1 and remove the last value; update several values
+            cov_mat[i, j + (0:(group_length -1))] <- (rmultinom(1,1,c(prob_vec,1))[,1])[-1*group_length]
+
+          } else if(group_function == 1){
+
+            # Logistic / binary case
+            prob_Lj <- plogis(tau[j] + sum(rho_mat[,j]*cov_mat[i,]))
+            cov_mat[i,j] <- rbinom(1,1,prob_Lj)
+          } # add in normal here once form is decide
+
+          j <- j + group_length
+
+        }
+      }
+
+      #Generate A according to the given law p (or alpha in the paper)
+      a_bar <- rbinom(N,1,p) #Q: can this go outside this loop? also, we may want to do this like GP
+
+      #Generate Y given A,L
+      if (weights[i] > 0){
+
+
+        prob_outcome_1[i] <- plogis(beta[1] + # intercept term
+                                      beta[2]*a_bar[i] + # individual treatment term
+                                      beta[3:(2+J)]%*%cov_mat[i,] + # individual covariate term(s)
+                                      beta[(3+J)]*sum(outcome[adjacency[[i]]]/weights[i]) + # neighbor outcome
+                                      beta[(4+J)]*sum(a_bar[adjacency[[i]]]/weights[i]) + # neighbor treatment
+                                      sum(beta[(4+J+(1:J))]*colSums(cov_mat[adjacency[[i]],(1:J), drop = FALSE]/weights[i]))) # neighbor covariate
+
+        outcome[i] <- rbinom(1,1,prob_outcome_1[i])
+      } else {
+        prob_outcome_1[i] <- plogis(beta[1] + # intercept term
+                                      beta[2]*a_bar[i] + # individual treatment term
+                                      beta[3:(2+J)]%*%cov_mat[i,]) # individual covariate term(s)
+
+        outcome[i] <- rbinom(1,1,prob_outcome_1[i])
+      }
+
+      #Generate indiviudal level spillover and direct effects
+      #Note: need to change individual treatment level to get these effects
+      a_bar_1 <- a_bar; a_bar_0 <- a_bar
+      a_bar_1[i] <- 1; a_bar_0[i] <- 0
+
+      if (weights[i] > 0){
+        prob_outcome_2 <- plogis(beta[1] + # intercept term
+                                   beta[2]*a_bar_1[i] + # individual treatment term
+                                   beta[3:(2+J)]%*%cov_mat[i,] + # individual covariate term(s)
+                                   beta[(3+J)]*sum(outcome[adjacency[[i]]]/weights[i]) + # neighbor outcome
+                                   beta[(4+J)]*sum(a_bar_1[adjacency[[i]]]/weights[i]) + # neighbor treatment
+                                   sum(beta[(4+J+(1:J))]*colSums(cov_mat[adjacency[[i]],(1:J), drop = FALSE]/weights[i]))) # neighbor covariate
+
+
+        prob_outcome_3 <- plogis(beta[1] + # intercept term
+                                   beta[2]*a_bar_0[i] + # individual treatment term
+                                   beta[3:(2+J)]%*%cov_mat[i,] + # individual covariate term(s)
+                                   beta[(3+J)]*sum(outcome[adjacency[[i]]]/weights[i]) + # neighbor outcome
+                                   beta[(4+J)]*sum(a_bar_0[adjacency[[i]]]/weights[i]) + # neighbor treatment
+                                   sum(beta[(4+J+(1:J))]*colSums(cov_mat[adjacency[[i]],(1:J), drop = FALSE]/weights[i]))) # neighbor covariate
+
+        prob_outcome_4 <- plogis(beta[1] + # intercept term
+                                   beta[3:(2+J)]%*%cov_mat[i,] + # individual covariate term(s)
+                                   beta[(3+J)]*sum(outcome[adjacency[[i]]]/weights[i]) + # neighbor outcome
+                                   sum(beta[(4+J+(1:J))]*colSums(cov_mat[adjacency[[i]],(1:J), drop = FALSE]/weights[i]))) # neighbor covariate
+
+      } else {
+        prob_outcome_2 <- plogis(beta[1] + # intercept term
+                                   beta[2]*a_bar_1[i] + # individual treatment term
+                                   beta[3:(2+J)]%*%cov_mat[i,]) # individual covariate term(s)
+
+
+        prob_outcome_3 <- plogis(beta[1] + # intercept term
+                                   beta[2]*a_bar_0[i] + # individual treatment term
+                                   beta[3:(2+J)]%*%cov_mat[i,]) # individual covariate term(s)
+
+        prob_outcome_4 <- plogis(beta[1] + # intercept term
+                                   beta[3:(2+J)]%*%cov_mat[i,]) # individual covariate term(s)
+
+      }
+      DE[i] <- prob_outcome_2 - prob_outcome_3
+      SE[i] <- prob_outcome_3 - prob_outcome_4
+    }
+  }
+
+  result.outcome <- mean(prob_outcome_1) #this is beta in the paper
+  result.SE <- mean(SE) #spillover
+  result.DE <- mean(DE) #direct
+
+  results <- c(result.outcome,result.SE,result.DE)
+  return(results)
+}
+
+
+#old version (hardcoded conditionals and indep only)
+network.gibbs3 <- function(parameters,R,N,p,adjacency,weights){
+
+  prob_outcome_truth1 <- NA #this is the E(Y_i(a)), or beta
+  DE <- NA #this is direct effect on the individual
+  SE <- NA #this is spillover effect on the individual
+
+  #parameters
+  tau <- parameters[1:3]
+  rho <- parameters[4:6]
+  nu <- parameters[7:9]
+  beta <- parameters[10:19]
+
+  #starting values
+  outcome_truth <- rbinom(N,1,runif(1,.1,.9))
+  cov1_truth <- rbinom(N,1,runif(1,.1,.9))
+  cov2_truth <- rbinom(N,1,runif(1,.1,.9))
+  cov3_truth <- rbinom(N,1,runif(1,.1,.9))
+
+  for (r in 1:R){
+
+    #Gibbs (conditional probabilities for each person)
+    for (i in 1:N){
+
+      if(weights[i] > 0){
+        #Generate L
+        prob_cov1_truth <- plogis(tau[1] + rho[1]*cov2_truth[i] + rho[2]*cov3_truth[i] + nu[1]*sum(cov1_truth[adjacency[[i]]]/weights[i]))
+        cov1_truth[i] <- rbinom(1,1,prob_cov1_truth)
+
+        prob_cov2_truth <- plogis(tau[2] + rho[1]*cov1_truth[i] + rho[3]*cov3_truth[i] + nu[2]*sum(cov1_truth[adjacency[[i]]]/weights[i]))
+        cov2_truth[i] <- rbinom(1,1,prob_cov2_truth)
+
+        prob_cov3_truth <- plogis(tau[3] + rho[2]*cov1_truth[i] + rho[3]*cov2_truth[i] + nu[3]*sum(cov1_truth[adjacency[[i]]]/weights[i]))
+        cov3_truth[i] <- rbinom(1,1,prob_cov3_truth)
+      } else {
+        prob_cov1_truth <- plogis(tau[1] + rho[1]*cov2_truth[i] + rho[2]*cov3_truth[i])
+        cov1_truth[i] <- rbinom(1,1,prob_cov1_truth)
+
+        prob_cov2_truth <- plogis(tau[2] + rho[1]*cov1_truth[i] + rho[3]*cov3_truth[i])
+        cov2_truth[i] <- rbinom(1,1,prob_cov2_truth)
+
+        prob_cov3_truth <- plogis(tau[3] + rho[2]*cov1_truth[i] + rho[3]*cov2_truth[i])
+        cov3_truth[i] <- rbinom(1,1,prob_cov3_truth)
+      }
+      #Generate A according to the given law p (or alpha in the paper)
+      a_bar <- rbinom(N,1,p) #Q: can this go outside this loop?
+
+      #Generate Y given A,L
+      if (weights[i] > 0){
+        prob_outcome_truth1[i] <- plogis(beta[1] + beta[2]*a_bar[i]
+                                         + beta[3]*sum(a_bar[adjacency[[i]]]/weights[i])
+                                         + beta[4]*cov1_truth[i]
+                                         + beta[5]*sum(cov1_truth[adjacency[[i]]]/weights[i])
+                                         + beta[6]*cov2_truth[i]
+                                         + beta[7]*sum(cov2_truth[adjacency[[i]]]/weights[i])
+                                         + beta[8]*cov3_truth[i]
+                                         + beta[9]*sum(cov3_truth[adjacency[[i]]]/weights[i])
+                                         + beta[10]*sum(outcome_truth[adjacency[[i]]]/weights[i])) #this is saved for the beta calculation
+
+        outcome_truth[i] <- rbinom(1,1,prob_outcome_truth1[i])
+      } else {
+        prob_outcome_truth1[i] <- plogis(beta[1] + beta[2]*a_bar[i]
+                                         + beta[4]*cov1_truth[i]
+                                         + beta[6]*cov2_truth[i]
+                                         + beta[8]*cov3_truth[i]) #this is saved for the beta calculation
+
+        outcome_truth[i] <- rbinom(1,1,prob_outcome_truth1[i])
+      }
+
+      #Generate indiviudal level spillover and direct effects
+      #Note: need to change individual treatment level to get these effects
+      a_bar_1 <- a_bar; a_bar_0 <- a_bar
+      a_bar_1[i] <- 1; a_bar_0[i] <- 0
+
+      if (weights[i] > 0){
+        prob_outcome_truth2 <- plogis(beta[1] + beta[2]*a_bar_1[i]
+                                      + beta[3]*sum(a_bar_1[adjacency[[i]]]/weights[i])
+                                      + beta[4]*cov1_truth[i]
+                                      + beta[5]*sum(cov1_truth[adjacency[[i]]]/weights[i])
+                                      + beta[6]*cov2_truth[i]
+                                      + beta[7]*sum(cov2_truth[adjacency[[i]]]/weights[i])
+                                      + beta[8]*cov3_truth[i]
+                                      + beta[9]*sum(cov3_truth[adjacency[[i]]]/weights[i])
+                                      + beta[10]*sum(outcome_truth[adjacency[[i]]]/weights[i]))
+
+
+        prob_outcome_truth3 <- plogis(beta[1] + beta[2]*a_bar_0[i]
+                                      + beta[3]*sum(a_bar_0[adjacency[[i]]]/weights[i])
+                                      + beta[4]*cov1_truth[i]
+                                      + beta[5]*sum(cov1_truth[adjacency[[i]]]/weights[i])
+                                      + beta[6]*cov2_truth[i]
+                                      + beta[7]*sum(cov2_truth[adjacency[[i]]]/weights[i])
+                                      + beta[8]*cov3_truth[i]
+                                      + beta[9]*sum(cov3_truth[adjacency[[i]]]/weights[i])
+                                      + beta[10]*sum(outcome_truth[adjacency[[i]]]/weights[i]))
+
+        prob_outcome_truth4 <- plogis(beta[1]
+                                      + beta[4]*cov1_truth[i]
+                                      + beta[5]*sum(cov1_truth[adjacency[[i]]]/weights[i])
+                                      + beta[6]*cov2_truth[i]
+                                      + beta[7]*sum(cov2_truth[adjacency[[i]]]/weights[i])
+                                      + beta[8]*cov3_truth[i]
+                                      + beta[9]*sum(cov3_truth[adjacency[[i]]]/weights[i])
+                                      + beta[10]*sum(outcome_truth[adjacency[[i]]]/weights[i]))
+      } else {
+        prob_outcome_truth2 <- plogis(beta[1] + beta[2]*a_bar_1[i]
+                                      + beta[4]*cov1_truth[i]
+                                      + beta[6]*cov2_truth[i]
+                                      + beta[8]*cov3_truth[i])
+
+
+        prob_outcome_truth3 <- plogis(beta[1] + beta[2]*a_bar_0[i]
+                                      + beta[4]*cov1_truth[i]
+                                      + beta[6]*cov2_truth[i]
+                                      + beta[8]*cov3_truth[i])
+
+        prob_outcome_truth4 <- plogis(beta[1]
+                                      + beta[4]*cov1_truth[i]
+                                      + beta[6]*cov2_truth[i]
+                                      + beta[8]*cov3_truth[i])
+      }
+      DE[i] <- prob_outcome_truth2 - prob_outcome_truth3
+      SE[i] <- prob_outcome_truth3 - prob_outcome_truth4
+    }
+  }
+
+  result.outcome <- mean(prob_outcome_truth1) #this is beta in the paper
+  result.SE <- mean(SE) #spillover
+  result.DE <- mean(DE) #direct
+
+  results <- c(result.outcome,result.SE,result.DE)
+  return(results)
+}

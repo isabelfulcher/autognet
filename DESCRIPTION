@@ -21,3 +21,9 @@ URL: https://github.com/isabelfulcher/autognet
 BugReports: https://github.com/isabelfulcher/autognet/issues
 RoxygenNote: 6.0.1
 VignetteBuilder: knitr
+Collate: 
+    'RcppExports.R'
+    'autognet.R'
+    'helperFunctions.R'
+    'bayesModelFunctions.R'
+    'ui.R'
