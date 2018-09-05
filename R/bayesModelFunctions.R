@@ -9,15 +9,6 @@ NULL
 aux.var.cl <- function(tau, rho, nu, N, R,
                        adjacency, start, weights, group_lengths, group_functions){
 
-  # Help initializing values
-  if(FALSE){
-    tau <- tau.p
-    rho <- rho.p
-    nu <- nu.p
-    start <- cov.i
-    R <- 10
-  }
-
   cov.mat <- start
 
   # Number of covariates
@@ -180,6 +171,7 @@ network.gibbs3.cl <- function(tau, rho, nu,
             # Logistic / binary case
             prob_Lj <- plogis(tau[j] + sum(rho_mat[,j]*cov_mat[i,]) + nu[j]*sum(cov_mat[adjacency[[i]],j]/weights[i]))
             cov_mat[i,j] <- rbinom(1,1,prob_Lj)
+
           } # add in normal here once form is decide
 
           j <- j + group_length

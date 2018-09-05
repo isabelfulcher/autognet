@@ -19,7 +19,8 @@ Suggests:
     knitr
 URL: https://github.com/isabelfulcher/autognet
 BugReports: https://github.com/isabelfulcher/autognet/issues
-RoxygenNote: 6.0.1
+RoxygenNote: 6.1.0
+Encoding: UTF-8
 VignetteBuilder: knitr
 Collate: 
     'RcppExports.R'
