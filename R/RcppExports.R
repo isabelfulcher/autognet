@@ -15,7 +15,7 @@
 #' x <- runif(1000)
 #'
 #' @export
-giniCpp <- function(x) {
-    .Call('_autognet_giniCpp', PACKAGE = 'autognet', x)
+auxVarCpp <- function(tau, rho, nu, N, R, J, rho_mat, adjacency, cov_i, weights, group_lengths, group_functions) {
+    .Call('_autognet_auxVarCpp', PACKAGE = 'autognet', tau, rho, nu, N, R, J, rho_mat, adjacency, cov_i, weights, group_lengths, group_functions)
 }
 

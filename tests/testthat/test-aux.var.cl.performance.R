@@ -97,7 +97,7 @@ indepedents_present <- dim(data.indep)[1] != 0
 if(indepedents_present) design.mat.indep <- as.matrix(cbind(1,data.indep[-1]))
 
 #initialize MCMC for loop
-b <- 1
+b <- B <- 1
 alpha <- matrix(NA,B+1,L)
 beta <- matrix(NA,B+1,P)
 accept_alpha <- NA
@@ -123,12 +123,38 @@ rho <- alpha.p[(ncov+1):(ncov+nrho)]
 nu <- alpha.p[(ncov+nrho+1):L]
 R <- 10
 
-aux.p.mat <- autognet:::aux.var.cl(tau,rho,nu,
-                        N,R,adjacency,cov.i,weights,group_lengths,group_functions)
+# Number of covariates
+cov.mat <- cov.i
+J <- dim(cov.mat)[2]
 
-tm <- microbenchmark::microbenchmark(
-   autognet:::aux.var.cl(tau,rho,nu,
-                        N,R,adjacency,cov.i,weights,group_lengths,group_functions),
-   mean(tau),
-  times=100)
-sdm <- summary(tm)
+# Make symmetrical matrix of the rho values
+rho_mat <- matrix(0, nrow = J, ncol = J)
+rho_mat[lower.tri(rho_mat, diag=FALSE)] <- rho; rho_mat <- rho_mat + t(rho_mat)
+
+
+library(autognet)
+library(Rcpp)
+
+#--------------------
+# caleb's hacky microbenchmark implementation
+# since it keeps failing
+#-------------
+
+start_time <- Sys.time()
+for(i in 1:100){
+  aux.p.mat.Cpp <- auxVarCpp(tau,rho,nu,N,R,J, rho_mat,
+                             adjacency,cov.i,weights,group_lengths,group_functions)
+}
+end_time <- Sys.time()
+CPPtime <- end_time - start_time
+
+start_time <- Sys.time()
+for(i in 1:100){
+aux.p.mat.R <- autognet:::aux.var.cl(tau,rho,nu,N,R,J, rho_mat,
+                                     adjacency,cov.i,weights,group_lengths,group_functions)
+}
+end_time <- Sys.time()
+Rtime <- end_time - start_time
+
+as.numeric(Rtime)/as.numeric(CPPtime)
+

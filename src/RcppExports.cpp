@@ -5,20 +5,31 @@
 
 using namespace Rcpp;
 
-// giniCpp
-float giniCpp(NumericVector x);
-RcppExport SEXP _autognet_giniCpp(SEXP xSEXP) {
+// auxVarCpp
+NumericMatrix auxVarCpp(NumericVector tau, NumericVector rho, NumericVector nu, int N, int R, int J, NumericMatrix rho_mat, List adjacency, NumericMatrix cov_i, IntegerVector weights, IntegerVector group_lengths, IntegerVector group_functions);
+RcppExport SEXP _autognet_auxVarCpp(SEXP tauSEXP, SEXP rhoSEXP, SEXP nuSEXP, SEXP NSEXP, SEXP RSEXP, SEXP JSEXP, SEXP rho_matSEXP, SEXP adjacencySEXP, SEXP cov_iSEXP, SEXP weightsSEXP, SEXP group_lengthsSEXP, SEXP group_functionsSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< NumericVector >::type x(xSEXP);
-    rcpp_result_gen = Rcpp::wrap(giniCpp(x));
+    Rcpp::traits::input_parameter< NumericVector >::type tau(tauSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type rho(rhoSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type nu(nuSEXP);
+    Rcpp::traits::input_parameter< int >::type N(NSEXP);
+    Rcpp::traits::input_parameter< int >::type R(RSEXP);
+    Rcpp::traits::input_parameter< int >::type J(JSEXP);
+    Rcpp::traits::input_parameter< NumericMatrix >::type rho_mat(rho_matSEXP);
+    Rcpp::traits::input_parameter< List >::type adjacency(adjacencySEXP);
+    Rcpp::traits::input_parameter< NumericMatrix >::type cov_i(cov_iSEXP);
+    Rcpp::traits::input_parameter< IntegerVector >::type weights(weightsSEXP);
+    Rcpp::traits::input_parameter< IntegerVector >::type group_lengths(group_lengthsSEXP);
+    Rcpp::traits::input_parameter< IntegerVector >::type group_functions(group_functionsSEXP);
+    rcpp_result_gen = Rcpp::wrap(auxVarCpp(tau, rho, nu, N, R, J, rho_mat, adjacency, cov_i, weights, group_lengths, group_functions));
     return rcpp_result_gen;
 END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
-    {"_autognet_giniCpp", (DL_FUNC) &_autognet_giniCpp, 1},
+    {"_autognet_auxVarCpp", (DL_FUNC) &_autognet_auxVarCpp, 12},
     {NULL, NULL, 0}
 };
 

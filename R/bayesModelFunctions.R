@@ -6,17 +6,10 @@ NULL
 ################################################
 
 ## 1.1 COVARIATE MODELS ##
-aux.var.cl <- function(tau, rho, nu, N, R,
-                       adjacency, start, weights, group_lengths, group_functions){
+aux.var.cl <- function(tau, rho, nu, N, R, J, rho_mat,
+                       adjacency, cov.i, weights, group_lengths, group_functions){
 
-  cov.mat <- start
-
-  # Number of covariates
-  J <- dim(cov.mat)[2]
-
-  # Make symmetrical matrix of the rho values
-  rho_mat <- matrix(0, nrow = J, ncol = J)
-  rho_mat[lower.tri(rho_mat, diag=FALSE)] <- rho; rho_mat <- rho_mat + t(rho_mat)
+  cov.mat <- cov.i
 
   # Number of iterations
   for (r in 1:R){
