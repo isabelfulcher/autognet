@@ -23,7 +23,7 @@ Imports:
   MASS
 Suggests:
     knitr
-URL: https://github.com/isabelfulcher/autognet
+URL: https://isabelfulcher.github.io/autognet/
 BugReports: https://github.com/isabelfulcher/autognet/issues
 RoxygenNote: 6.1.0
 Encoding: UTF-8
