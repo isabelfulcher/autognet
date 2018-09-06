@@ -12,8 +12,8 @@ int rcpp_rbinom_one(float prob) {
 
 //' Run Gibbs sampler for auxiliary covariate values using Rcpp
 //'
-//' Given a vector of numbers, calcuate the
-//' Gini index being sensitive to NAs
+//' Given the specific inputs, determine auxiliary covariate
+//' values using a Gibbs sampling procedure.
 //'
 //' @param tau A numeric vector for the intercept terms in the covariate model
 //' @param rho A numeric vector for the correlation terms in the covariate model

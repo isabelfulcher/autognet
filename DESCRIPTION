@@ -18,6 +18,8 @@ Imports:
   Rcpp (>= 0.12.12),
   RcppArmadillo,
   testthat,
+  methods, 
+  utils,
   MASS
 Suggests:
     knitr
@@ -31,4 +33,4 @@ Collate:
     'autognet.R'
     'helperFunctions.R'
     'bayesModelFunctions.R'
-    'ui.R'
+    'user-functions.R'

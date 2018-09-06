@@ -1,34 +1,81 @@
 #' @include bayesModelFunctions.R
 NULL
 
+#' Fit the covariate model for the Bayesian auto-g network computation.
+#'
+#' \code{agcParam} takes a data frame containing a treatment,
+#' outcome, and various covariates to be modeled via an MCMC.
+#' The network of observations (rows in the data frame) should
+#' be contained in the adjacency matrix (adjmat).
+#'
+#' B and R specify the number of iterations to be run for the
+#' various Bayesian sampling procedures. Defaults are conservative.
+#'
+#' The seed variable requires a vector of integers to
+#' run potentially multiple chains.
+#'
+#' @param data A data.frame containing variables to be considered
+#' for the covariate model.
+#'
+#' @param treatment A string specifying the column in data
+#' that is the treatment effect in the underlying model.
+#' Must be a binary (0/1) value.
+#'
+#' @param outcome A string specifying the column in data
+#' that is the outcome of interest in the underlying model.
+#' Must be a binary (0/1) value.
+#'
+#' @param adjmat An adjacency matrix (0/1s) specifying
+#' the network structure. The number of rows and columns should
+#' match the number of rows in the data object.
+#'
+#' @param B The number of iterations for the MCMC outer loop.
+#' Default = 25,000
+#'
+#' @param R The number of iterations for the Gibbs inner loop.
+#' Default = 10.
+#'
+#' @param seed An integer vector of the values for \code{set.seed}.
+#' By default, only c(1), which runs one chain with a seed of 1. If
+#' the vector is of length greater than 1, then multiple chains with
+#' both values as a seed will be run in parallel.
+#'
+#' @return An S3 object of type agcParamClass that contains essential
+#' values for the covariate model.
+#'
 #' @importFrom stats plogis quantile rbinom rmultinom runif var
+#' @importFrom utils setTxtProgressBar txtProgressBar
+#' @import methods
+#'
+#' @examples
+#'
+#' path <-paste0(system.file('extdata',package='mgatk'),"/glioma/final/")
+#'
+#' rdsIn <- readRDS(paste0(system.file('extdata',package='autognet'),"/agc-example.rds"))
+#' adjmat <- rdsIn[[1]]
+#' data <- rdsIn[[2]]
+#' treatment <- "treatment"
+#' outcome <- "outcome"
+#' B = 10
+#' R = 5
+#' seed = 1
+#'
+#' mod <- agcParam
+#'
+#' @export
 setGeneric(name = "agcParam",
-           def = function(data, treatment, outcome, adjmat, numeric,
+           def = function(data, treatment, outcome, adjmat,
                           B = 25000, R = 10, seed = c(1))
 
              standardGeneric("agcParam"))
 
 #' @rdname agcParam
-setMethod("agcParam", signature("data.frame", "character", "character",
+setMethod("agcParam", signature("data.frame", "character", "character", "numeric",
                                 "numeric", "numeric", "numeric"),
           definition = function(data, treatment, outcome, adjmat,
                                 B, R, seed){
 
             "%ni%" <- Negate("%in%")
-
-
-            if(FALSE){
-              library(Rcpp)
-              library(autognet)
-              rdsIn <- readRDS(paste0(system.file('extdata',package='autognet'),"/agc-example.rds"))
-              adjmat <- rdsIn[[1]]
-              data <- rdsIn[[2]]
-              treatment <- "treatment"
-              outcome <- "outcome"
-              B = 10
-              R = 5
-              seed = 1
-            }
 
             # Sanity checks for user-specified parameters
             possibilities <- colnames(data)

@@ -2,21 +2,43 @@
 % Please edit documentation in R/RcppExports.R
 \name{auxVarCpp}
 \alias{auxVarCpp}
-\title{Calculate the Gini Index using Rcpp}
+\title{Run Gibbs sampler for auxiliary covariate values using Rcpp}
 \usage{
 auxVarCpp(tau, rho, nu, N, R, J, rho_mat, adjacency, cov_i, weights,
   group_lengths, group_functions)
 }
 \arguments{
-\item{x}{A numeric vector}
+\item{tau}{A numeric vector for the intercept terms in the covariate model}
+
+\item{rho}{A numeric vector for the correlation terms in the covariate model}
+
+\item{nu}{A numberic vector for the neighbor terms in the covariate model}
+
+\item{N}{An integer indicating the size of the interconnected network}
+
+\item{R}{An integer indicating the number of iterations for the Gibbs}
+
+\item{J}{An integer for the number of covariates}
+
+\item{rho_mat}{A numeric matrix for rho terms}
+
+\item{adjacency}{A binary matrix indicating connected units}
+
+\item{cov_i}{A numeric matrix for observed covariate values (starting values for chain)}
+
+\item{weights}{A numeric vector indicating the number of neighbors for each node}
+
+\item{group_lengths}{An integer vector indicating the number of categories for each variable}
+
+\item{group_functions}{An integer vector indicating the type of variable}
 }
 \value{
-A float of the Gini index where values are
+A numeric matrix for auxiliary covariate values
 between [0,1]
 }
 \description{
-Given a vector of numbers, calcuate the
-Gini index being sensitive to NAs
+Given the specific inputs, determine auxiliary covariate
+values using a Gibbs sampling procedure.
 }
 \examples{
 
