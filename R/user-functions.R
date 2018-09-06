@@ -202,16 +202,20 @@ setMethod("agcParam", signature("data.frame", "character", "character",
               h.aux.c <- alpha[b,]%*%sum.aux.p
 
               #independent units
-              f.p.num <- alpha.p[1:(ncov+nrho)]%*%sum.l.indep
-              f.p.denom <- log(sum(autognet:::v_get_sum(1:dim(l_grid)[1], l_grid, tau.p, rho.p, ncov)))
-              f.c.num <- alpha[b,1:(ncov+nrho)]%*%sum.l.indep
-              f.c.denom <- log(sum(autognet:::v_get_sum(1:dim(l_grid)[1], l_grid, alpha[b,1:ncov], alpha[b,(ncov+1):(ncov+nrho)], ncov)))
+              if(indepedents_present){
+                f.p.num <- alpha.p[1:(ncov+nrho)]%*%sum.l.indep
+                f.p.denom <- log(sum(autognet:::v_get_sum(1:dim(l_grid)[1], l_grid, tau.p, rho.p, ncov)))
+                f.c.num <- alpha[b,1:(ncov+nrho)]%*%sum.l.indep
+                f.c.denom <- log(sum(autognet:::v_get_sum(1:dim(l_grid)[1], l_grid, alpha[b,1:ncov], alpha[b,(ncov+1):(ncov+nrho)], ncov)))
 
-              #priors
-              #prior.p <- mvtnorm::dmvt(alpha.p,delta=rep(0,L),sigma=4*diag(L),df=3,log=TRUE)
-              #prior.c <- mvtnorm::dmvt(alpha[b,,c],delta=rep(0,L),sigma=4*diag(L),df=3,log=TRUE)
+                #priors
+                #prior.p <- mvtnorm::dmvt(alpha.p,delta=rep(0,L),sigma=4*diag(L),df=3,log=TRUE)
+                #prior.c <- mvtnorm::dmvt(alpha[b,,c],delta=rep(0,L),sigma=4*diag(L),df=3,log=TRUE)
 
-              ratio <- h.l1.p + h.aux.c - h.l1.c - h.aux.p + f.p.num - n.indep*f.p.denom - f.c.num + n.indep*f.c.denom
+                ratio <- h.l1.p + h.aux.c - h.l1.c - h.aux.p + f.p.num - n.indep*f.p.denom - f.c.num + n.indep*f.c.denom
+              } else {
+                ratio <- h.l1.p + h.aux.c - h.l1.c - h.aux.p
+              }
 
               accept <- rbinom(1,1,min(1,exp(ratio)))
               if (accept == 1){alpha[b+1,] <- alpha.p} else { alpha[b+1,] <- alpha[b,] }
@@ -233,23 +237,27 @@ setMethod("agcParam", signature("data.frame", "character", "character",
 
               #Step 3. Calculate accept-reject ratio (everything is log-ed!)
               #interconnected units
-              h.p <- beta.p%*%sum.y
-              h.c <- beta[b,]%*%sum.y
-              h.aux.p <- beta.p%*%sum.aux.p
-              h.aux.c <- beta[b,]%*%sum.aux.p
+              if(indepedents_present){
+                h.p <- beta.p%*%sum.y
+                h.c <- beta[b,]%*%sum.y
+                h.aux.p <- beta.p%*%sum.aux.p
+                h.aux.c <- beta[b,]%*%sum.aux.p
 
-              #independent units
-              f.p.num <- beta.p[1:(2+ncov)]%*%sum.y.indep
-              f.p.denom <- sum(log(1+ exp(design.mat.indep%*%beta.p[1:(2+ncov)])))
-              f.c.num <- beta[b,1:(2+ncov)]%*%sum.y.indep
-              f.c.denom <- sum(log(1+exp(design.mat.indep%*%beta[b,1:(2+ncov)])))
+                #independent units
 
-              #priors
-              #prior.p <- mvtnorm::dmvt(beta.p,delta=rep(0,P),sigma=4*diag(P),df=3,log=TRUE)
-              #prior.c <- mvtnorm::dmvt(beta[b,,c],delta=rep(0,P),sigma=4*diag(P),df=3,log=TRUE)
+                f.p.num <- beta.p[1:(2+ncov)]%*%sum.y.indep
+                f.p.denom <- sum(log(1+ exp(design.mat.indep%*%beta.p[1:(2+ncov)])))
+                f.c.num <- beta[b,1:(2+ncov)]%*%sum.y.indep
+                f.c.denom <- sum(log(1+exp(design.mat.indep%*%beta[b,1:(2+ncov)])))
 
-              ratio <- h.p + h.aux.c - h.c - h.aux.p + f.p.num - f.p.denom - f.c.num + f.c.denom
+                #priors
+                #prior.p <- mvtnorm::dmvt(beta.p,delta=rep(0,P),sigma=4*diag(P),df=3,log=TRUE)
+                #prior.c <- mvtnorm::dmvt(beta[b,,c],delta=rep(0,P),sigma=4*diag(P),df=3,log=TRUE)
 
+                ratio <- h.p + h.aux.c - h.c - h.aux.p + f.p.num - f.p.denom - f.c.num + f.c.denom
+              } else {
+                ratio <- h.p + h.aux.c - h.c
+              }
               accept <- rbinom(1,1,min(1,exp(ratio)))
               if (accept == 1){beta[b+1,] <- beta.p} else { beta[b+1,] <- beta[b,] }
               accept_beta[b] <- accept
