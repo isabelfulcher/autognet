@@ -1,4 +1,4 @@
-
+library(testthat)
 context("C++ version of aux.var.cl performs well")
 set.seed(14651)
 
@@ -140,21 +140,33 @@ library(Rcpp)
 # since it keeps failing
 #-------------
 
+set.seed(1)
 start_time <- Sys.time()
-for(i in 1:100){
-  aux.p.mat.Cpp <- auxVarCpp(tau,rho,nu,N,R,J, rho_mat,
-                             adjacency,cov.i,weights,group_lengths,group_functions)
-}
-end_time <- Sys.time()
-CPPtime <- end_time - start_time
-
-start_time <- Sys.time()
-for(i in 1:100){
+lapply(1:10, function(i){
 aux.p.mat.R <- autognet:::aux.var.cl(tau,rho,nu,N,R,J, rho_mat,
                                      adjacency,cov.i,weights,group_lengths,group_functions)
-}
+}) -> olist_r
 end_time <- Sys.time()
 Rtime <- end_time - start_time
 
-as.numeric(Rtime)/as.numeric(CPPtime)
+# Have to change the index of adjacency
+for (i in 1:N){
+  adjacency[[i]] <- adjacency[[i]] - 1
+}
 
+set.seed(1)
+start_time <- Sys.time()
+lapply(1:10, function(i){
+  aux.p.mat.Cpp <- auxVarCpp(tau,rho,nu,N,R,J, rho_mat,
+                             adjacency,cov.i,weights,group_lengths,group_functions)
+}) -> olist_cpp
+end_time <- Sys.time()
+CPPtime <- end_time - start_time
+
+test_that("R and C++ versions give the same covariate model values", {
+  expect_true(all(summary(sapply(olist_cpp, sum)) == summary(sapply(olist_r, sum))))
+  expect_true(all(olist_cpp[[8]] == olist_r[[8]]))
+  fc <- as.numeric(Rtime)/as.numeric(CPPtime)
+  message(fc)
+  expect_true(fc > 1)
+})

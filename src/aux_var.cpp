@@ -1,11 +1,14 @@
-#include <Rcpp.h>
 #include <math.h>
+// [[Rcpp::depends(RcppArmadillo)]]
+#include <RcppArmadillo.h>
+
 using namespace Rcpp;
 
 int rcpp_rbinom_one(float prob) {
   int v = as<int>(rbinom(1, 1, prob));
   return(v);
 }
+
 
 //' Calculate the Gini Index using Rcpp
 //'
@@ -22,12 +25,12 @@ int rcpp_rbinom_one(float prob) {
 //'
 //' @export
 // [[Rcpp::export]]
-NumericMatrix auxVarCpp (NumericVector tau, NumericVector rho, NumericVector nu,
-                         int N, int R, int J, NumericMatrix rho_mat,
-                         List adjacency, NumericMatrix cov_i, IntegerVector weights,
-                         IntegerVector group_lengths, IntegerVector group_functions){
+arma::mat auxVarCpp (NumericVector tau, NumericVector rho, NumericVector nu,
+                     int N, int R, int J, NumericMatrix rho_mat,
+                     List adjacency, arma::mat cov_i, IntegerVector weights,
+                     IntegerVector group_lengths, IntegerVector group_functions){
 
-  NumericMatrix cov_mat = cov_i;
+  arma::mat cov_mat = cov_i;
   int number_of_groups = group_lengths.size();
 
   // Number of iterations
@@ -67,12 +70,14 @@ NumericMatrix auxVarCpp (NumericVector tau, NumericVector rho, NumericVector nu,
           // Logistic / binary case
 
           // Fix this probably have to use a loop because vectorized logic is hard here
-          NumericVector rowVec = rho_mat(_,j);
-          NumericVector covVec = cov_mat(i,_);
-          NumericVector whichN = adjacency[i];
-          NumericVector covAdjVec = cov_mat(whichN,j)
-          float prob_Lj = plogis(tau[j] + sum(rowVec*covVec)) + nu[j]*sum(covAdjVec/weights[i]));
-          cov_mat(i,j) = rcpp_rbinom_one(0.5); // prob_Lj
+          arma::vec rowVec = rho_mat(_,j);
+          arma::mat covVec = vectorise(cov_mat.rows(i,i));
+          arma::uvec whichN = adjacency[i];
+          arma::mat covAdjVec = cov_mat.cols(j,j);
+          float weights_i = weights[i];
+          float nei_w = sum(covAdjVec.elem(whichN)/weights_i);
+          float prob_Lj = R::plogis(arma::as_scalar(tau[j] + dot(rowVec,covVec) + nu[j]*nei_w), 0, 1, 1, 0);
+          cov_mat(i,j) = rcpp_rbinom_one(prob_Lj); // prob_Lj
 
         } // add in normal here once form is decide
 

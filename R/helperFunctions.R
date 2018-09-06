@@ -12,7 +12,7 @@ NULL
 
 #' @importFrom stats model.matrix
 #' @importFrom utils combn
-
+#' @importFrom MASS mvrnorm
 .covariate_process <- function(test_df){
 
   # Initialize values
