@@ -10,13 +10,24 @@ int rcpp_rbinom_one(float prob) {
 }
 
 
-//' Calculate the Gini Index using Rcpp
+//' Run Gibbs sampler for auxiliary covariate values using Rcpp
 //'
 //' Given a vector of numbers, calcuate the
 //' Gini index being sensitive to NAs
 //'
-//' @param x A numeric vector
-//' @return A float of the Gini index where values are
+//' @param tau A numeric vector for the intercept terms in the covariate model
+//' @param rho A numeric vector for the correlation terms in the covariate model
+//' @param nu A numberic vector for the neighbor terms in the covariate model
+//' @param N An integer indicating the size of the interconnected network
+//' @param R An integer indicating the number of iterations for the Gibbs
+//' @param J An integer for the number of covariates
+//' @param rho_mat A numeric matrix for rho terms
+//' @param adjacency A binary matrix indicating connected units
+//' @param cov_i A numeric matrix for observed covariate values (starting values for chain)
+//' @param weights A numeric vector indicating the number of neighbors for each node
+//' @param group_lengths An integer vector indicating the number of categories for each variable
+//' @param group_functions An integer vector indicating the type of variable
+//' @return A numeric matrix for auxiliary covariate values
 //' between [0,1]
 //'
 //' @examples
