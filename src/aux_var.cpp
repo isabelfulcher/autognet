@@ -22,7 +22,7 @@ int rcpp_rbinom_one(float prob) {
 //' @param R An integer indicating the number of iterations for the Gibbs
 //' @param J An integer for the number of covariates
 //' @param rho_mat A numeric matrix for rho terms
-//' @parm adjacency A binary matrix indicating connected units
+//' @param adjacency A binary matrix indicating connected units
 //' @param cov_i A numeric matrix for observed covariate values (starting values for chain)
 //' @param weights A numeric vector indicating the number of neighbors for each node
 //' @param group_lengths An integer vector indicating the number of categories for each variable
