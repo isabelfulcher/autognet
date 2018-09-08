@@ -3,15 +3,14 @@
 \docType{methods}
 \name{agcParam}
 \alias{agcParam}
-\alias{agcParam,data.frame,character,character,matrix,numeric,numeric,numeric-method}
+\alias{agcParam,data.frame,character,character-method}
 \title{Fit the covariate model for the Bayesian auto-g network computation.}
 \usage{
 agcParam(data, treatment, outcome, adjmat, B = 25000, R = 10,
   seed = c(1))
 
-
-  \S4method{agcParam}{data.frame,character,character,matrix,numeric,numeric,numeric}(data,
-  treatment, outcome, adjmat, B = 25000, R = 10, seed = c(1))
+\S4method{agcParam}{data.frame,character,character}(data, treatment,
+  outcome, adjmat, B = 25000, R = 10, seed = c(1))
 }
 \arguments{
 \item{data}{A data.frame containing variables to be considered

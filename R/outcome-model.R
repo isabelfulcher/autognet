@@ -55,7 +55,7 @@ setGeneric(name = "agcEffect",
              standardGeneric("agcEffect"))
 
 #' @rdname agcEffect
-setMethod("agcEffect", signature("list", "numeric", "numeric", "numeric", "numeric", "numeric"),
+setMethod("agcEffect", signature("list", "ANY", "ANY", "ANY", "ANY", "ANY"),
           definition = function(mod, burnin = 1, thin = 0.2, treatment_allocation = 0.5, R = 10, seed = 1){
 
             stopifnot(treatment_allocation > 0 & treatment_allocation < 1)

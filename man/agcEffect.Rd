@@ -3,15 +3,14 @@
 \docType{methods}
 \name{agcEffect}
 \alias{agcEffect}
-\alias{agcEffect,list,numeric,numeric,numeric,numeric,numeric-method}
+\alias{agcEffect,list-method}
 \title{Evaluate the out model for the Bayesian auto-g network computation.}
 \usage{
 agcEffect(mod, burnin = 1, thin = 0.5, treatment_allocation = 0.5,
   R = 10, seed = 1)
 
-\S4method{agcEffect}{list,numeric,numeric,numeric,numeric,numeric}(mod,
-  burnin = 1, thin = 0.2, treatment_allocation = 0.5, R = 10,
-  seed = 1)
+\S4method{agcEffect}{list}(mod, burnin = 1, thin = 0.2,
+  treatment_allocation = 0.5, R = 10, seed = 1)
 }
 \arguments{
 \item{mod}{An \code{agcParamClass} object from \code{agcParam}

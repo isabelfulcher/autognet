@@ -71,8 +71,8 @@ setGeneric(name = "agcParam",
              standardGeneric("agcParam"))
 
 #' @rdname agcParam
-setMethod("agcParam", signature("data.frame", "character", "character", "matrix",
-                                "numeric", "numeric", "numeric"),
+setMethod("agcParam", signature("data.frame", "character", "character", "ANY",
+                                "ANY", "ANY", "ANY"),
           definition = function(data, treatment, outcome, adjmat,
                                 B, R, seed){
 
