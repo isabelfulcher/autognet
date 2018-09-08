@@ -2,8 +2,10 @@
 
 export(agcParam)
 export(auxVarCpp)
+import(Rcpp)
 import(methods)
 importFrom(MASS,mvrnorm)
+importFrom(parallel,mclapply)
 importFrom(stats,model.matrix)
 importFrom(stats,plogis)
 importFrom(stats,quantile)

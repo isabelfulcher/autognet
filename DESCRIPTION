@@ -20,6 +20,7 @@ Imports:
   testthat,
   methods, 
   utils,
+  parallel,
   MASS
 Suggests:
     knitr
@@ -33,4 +34,4 @@ Collate:
     'autognet.R'
     'helperFunctions.R'
     'bayesModelFunctions.R'
-    'user-functions.R'
+    'covariate-model.R'
