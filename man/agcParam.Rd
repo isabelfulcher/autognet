@@ -41,7 +41,7 @@ the vector is of length greater than 1, then multiple chains with
 both values as a seed will be run in parallel.}
 }
 \value{
-An S3 object of type agcParamClass that contains essential
+An S3 object of type \code{agcParamClass} that contains essential
 values for the covariate model.
 }
 \description{

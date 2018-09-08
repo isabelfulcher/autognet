@@ -35,3 +35,4 @@ Collate:
     'helperFunctions.R'
     'bayesModelFunctions.R'
     'covariate-model.R'
+    'outcome-model.R'

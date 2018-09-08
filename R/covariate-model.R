@@ -40,7 +40,7 @@ NULL
 #' the vector is of length greater than 1, then multiple chains with
 #' both values as a seed will be run in parallel.
 #'
-#' @return An S3 object of type agcParamClass that contains essential
+#' @return An S3 object of type \code{agcParamClass} that contains essential
 #' values for the covariate model.
 #'
 #' @importFrom stats plogis quantile rbinom rmultinom runif var
@@ -325,8 +325,8 @@ setMethod("agcParam", signature("data.frame", "character", "character", "matrix"
               colnames(alpha) <- cov.lab
               colnames(beta) <- outcome.lab
 
-              outlist <- list(alpha,beta,accept_alpha,accept_beta,use_rho_all,group_lengths,group_functions)
-              names(outlist) <- c("alpha", "beta", "accept_alpha", "accept_beta", "use_rho_all", "group_lengths", "group_functions")
+              outlist <- list(alpha,beta,accept_alpha,accept_beta,use_rho_all,group_lengths,group_functions, adjmat)
+              names(outlist) <- c("alpha", "beta", "accept_alpha", "accept_beta", "use_rho_all", "group_lengths", "group_functions", "adjmat")
 
               return(outlist)
 
@@ -334,7 +334,6 @@ setMethod("agcParam", signature("data.frame", "character", "character", "matrix"
 
             # Name according to the chain
             names(outoutlist) <- paste0("chain", as.character(1:length(outoutlist)))
-
-            attr(outoutlist, "class") <- "agcParamClass"
+            class(outoutlist) <- append(class(outoutlist),"agcParamClass")
             return(outoutlist)
           })
