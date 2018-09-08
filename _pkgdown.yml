@@ -6,11 +6,9 @@ templates:
 
 navbar:
   left:
-  - text: Vignette
-    href: articles/gchromVAR_vignette.html
   - text: Reference
     href: reference/index.html
-  - text: Manuscripts
+  - text: AutoGNet-manuscript
     href: https://arxiv.org/abs/1709.01577
   - text: GitHub
     icon: fa-github
