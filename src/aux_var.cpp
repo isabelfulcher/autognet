@@ -10,6 +10,14 @@ int rcpp_rbinom_one(float prob) {
 }
 
 
+// [[Rcpp::export]]
+IntegerVector oneMultinomCalt(NumericVector probs) {
+    int k = probs.size();
+    IntegerVector ans(k);
+    rmultinom(1, probs.begin(), k, ans.begin());
+    return(ans);
+}
+
 //' Run Gibbs sampler for auxiliary covariate values using Rcpp
 //'
 //' Given the specific inputs, determine auxiliary covariate
@@ -30,9 +38,6 @@ int rcpp_rbinom_one(float prob) {
 //' @return A numeric matrix for auxiliary covariate values
 //' between [0,1]
 //'
-//' @examples
-//'
-//' x <- runif(1000)
 //'
 //' @export
 // [[Rcpp::export]]
@@ -68,11 +73,26 @@ arma::mat auxVarCpp (NumericVector tau, NumericVector rho, NumericVector nu,
         if(group_length > 1){
 
           // Multinomial case
-          // prob_vec <- sapply(0:(group_length -1), function(m){
-          //   j_prime <- j + m
-          //   exp(tau[j_prime] + sum(rho_mat[,j_prime]*cov.mat[i,]) + nu[j_prime]*sum(cov.mat[adjacency[[i]],j_prime]/weights[i]))
-          // })
+          NumericVector prob_vec(group_length + 1);
+          prob_vec = prob_vec + 1;
+          for (int m = 0; m < group_length; ++m){
+            int jprime = j + m; //already set j to 0 above whereas it is 1 in R
+            arma::vec rowVec = rho_mat(_,j);
+            arma::mat covVec = vectorise(cov_mat.rows(i,i));
+            arma::uvec whichN = adjacency[i];
+            arma::mat covAdjVec = cov_mat.cols(j,j);
+            float weights_i = weights[i];
+            float nei_w = sum(covAdjVec.elem(whichN)/weights_i);
+            float prob_Lj = exp(arma::as_scalar(tau[jprime] + dot(rowVec,covVec) + nu[jprime]*nei_w));
+            prob_vec(m) = prob_Lj;
+          }
+          // make the rmultinom call
+          IntegerVector multi_out = oneMultinomCalt(prob_vec);
 
+          // update elements in matrix via another loop
+          for (int m = 0; m < group_length; ++m){
+            cov_mat(i,j + m) = multi_out(m);
+          }
           // for the rmultinom call, have to append a 1 and remove the last value; update several values
           // cov.mat[i, j + (0:(group_length -1))] <- (rmultinom(1,1,c(prob_vec,1))[,1])[-1*group_length]
 
@@ -90,7 +110,7 @@ arma::mat auxVarCpp (NumericVector tau, NumericVector rho, NumericVector nu,
           float prob_Lj = R::plogis(arma::as_scalar(tau[j] + dot(rowVec,covVec) + nu[j]*nei_w), 0, 1, 1, 0);
           cov_mat(i,j) = rcpp_rbinom_one(prob_Lj); // prob_Lj
 
-        } // add in normal here once form is decide
+        } // add in normal here once form is decided
 
         j = j + group_length;
 

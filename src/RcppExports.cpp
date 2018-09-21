@@ -6,6 +6,17 @@
 
 using namespace Rcpp;
 
+// oneMultinomCalt
+IntegerVector oneMultinomCalt(NumericVector probs);
+RcppExport SEXP _autognet_oneMultinomCalt(SEXP probsSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericVector >::type probs(probsSEXP);
+    rcpp_result_gen = Rcpp::wrap(oneMultinomCalt(probs));
+    return rcpp_result_gen;
+END_RCPP
+}
 // auxVarCpp
 arma::mat auxVarCpp(NumericVector tau, NumericVector rho, NumericVector nu, int N, int R, int J, NumericMatrix rho_mat, List adjacency, arma::mat cov_i, IntegerVector weights, IntegerVector group_lengths, IntegerVector group_functions);
 RcppExport SEXP _autognet_auxVarCpp(SEXP tauSEXP, SEXP rhoSEXP, SEXP nuSEXP, SEXP NSEXP, SEXP RSEXP, SEXP JSEXP, SEXP rho_matSEXP, SEXP adjacencySEXP, SEXP cov_iSEXP, SEXP weightsSEXP, SEXP group_lengthsSEXP, SEXP group_functionsSEXP) {
@@ -30,6 +41,7 @@ END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
+    {"_autognet_oneMultinomCalt", (DL_FUNC) &_autognet_oneMultinomCalt, 1},
     {"_autognet_auxVarCpp", (DL_FUNC) &_autognet_auxVarCpp, 12},
     {NULL, NULL, 0}
 };

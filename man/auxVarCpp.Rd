@@ -40,8 +40,3 @@ between [0,1]
 Given the specific inputs, determine auxiliary covariate
 values using a Gibbs sampling procedure.
 }
-\examples{
-
-x <- runif(1000)
-
-}
