@@ -157,7 +157,7 @@ network.gibbs3.cl <- function(tau, rho, nu,
             })
 
             # for the rmultinom call, have to append a 1 and remove the last value; update several values
-            cov_mat[i, j + (0:(group_length -1))] <- (rmultinom(1,1,c(prob_vec,1))[,1])[-1*group_length]
+            cov_mat[i, j + (0:(group_length -1))] <- (rmultinom(1,1,c(prob_vec,1))[,1])[-1*(group_length +1)]
 
           } else if(group_function == 1){
 

@@ -201,6 +201,13 @@ setMethod("agcParam", signature("data.frame", "character", "character", "ANY",
             #for independent terms denominator
             l_grid <- unname(data.matrix(expand.grid(replicate(ncov, c(0,1), simplify=FALSE))))
 
+            # Remove zero pairs
+            if (length(zero_pairs) != 0){
+              for (j in 1:length(zero_pairs)){
+                l_grid <- l_grid[-which(apply(l_grid[,as.numeric(strsplit(zero_pairs,"_")[[j]])],1,sum)>1),]
+              }
+            }
+
             # Have to change the index of adjacency
             for (i in 1:N){
               adjacency[[i]] <- adjacency[[i]] - 1
