@@ -6,14 +6,36 @@
 
 using namespace Rcpp;
 
-// oneMultinomCalt
-IntegerVector oneMultinomCalt(NumericVector probs);
-RcppExport SEXP _autognet_oneMultinomCalt(SEXP probsSEXP) {
+// oneMultinomCall
+IntegerVector oneMultinomCall(NumericVector probs);
+RcppExport SEXP _autognet_oneMultinomCall(SEXP probsSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< NumericVector >::type probs(probsSEXP);
-    rcpp_result_gen = Rcpp::wrap(oneMultinomCalt(probs));
+    rcpp_result_gen = Rcpp::wrap(oneMultinomCall(probs));
+    return rcpp_result_gen;
+END_RCPP
+}
+// oneMultinomC
+IntegerVector oneMultinomC(NumericVector probs);
+RcppExport SEXP _autognet_oneMultinomC(SEXP probsSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericVector >::type probs(probsSEXP);
+    rcpp_result_gen = Rcpp::wrap(oneMultinomC(probs));
+    return rcpp_result_gen;
+END_RCPP
+}
+// callRMultinom
+IntegerVector callRMultinom(NumericVector x);
+RcppExport SEXP _autognet_callRMultinom(SEXP xSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericVector >::type x(xSEXP);
+    rcpp_result_gen = Rcpp::wrap(callRMultinom(x));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -41,7 +63,9 @@ END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
-    {"_autognet_oneMultinomCalt", (DL_FUNC) &_autognet_oneMultinomCalt, 1},
+    {"_autognet_oneMultinomCall", (DL_FUNC) &_autognet_oneMultinomCall, 1},
+    {"_autognet_oneMultinomC", (DL_FUNC) &_autognet_oneMultinomC, 1},
+    {"_autognet_callRMultinom", (DL_FUNC) &_autognet_callRMultinom, 1},
     {"_autognet_auxVarCpp", (DL_FUNC) &_autognet_auxVarCpp, 12},
     {NULL, NULL, 0}
 };

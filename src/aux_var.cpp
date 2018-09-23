@@ -11,11 +11,30 @@ int rcpp_rbinom_one(float prob) {
 
 
 // [[Rcpp::export]]
-IntegerVector oneMultinomCalt(NumericVector probs) {
-    int k = probs.size();
-    IntegerVector ans(k);
-    rmultinom(1, probs.begin(), k, ans.begin());
-    return(ans);
+IntegerVector oneMultinomCall(NumericVector probs) {
+  int k = probs.size();
+  IntegerVector ans(k);
+  rmultinom(1, probs.begin(), k, ans.begin());
+  return(ans);
+}
+
+// [[Rcpp::export]]
+IntegerVector oneMultinomC(NumericVector probs) {
+  int k = probs.size();
+  SEXP ans;
+  PROTECT(ans = Rf_allocVector(INTSXP, k));
+  probs = Rf_coerceVector(probs, REALSXP);
+  rmultinom(1, REAL(probs), k, &INTEGER(ans)[0]);
+  UNPROTECT(1);
+  return(ans);
+}
+
+// [[Rcpp::export]]
+IntegerVector callRMultinom(NumericVector x) {
+  int n = x.size();
+  IntegerVector d(n);
+  R::rmultinom(1, x.begin(), n, d.begin());
+  return d;
 }
 
 //' Run Gibbs sampler for auxiliary covariate values using Rcpp
@@ -71,7 +90,7 @@ arma::mat auxVarCpp (NumericVector tau, NumericVector rho, NumericVector nu,
         // entity, then it is definitely a multinomial
 
         if(group_length > 1){
-
+          // Rcpp::Rcout << i;
           // Multinomial case
           NumericVector prob_vec(group_length + 1);
           prob_vec = prob_vec + 1;
@@ -87,10 +106,13 @@ arma::mat auxVarCpp (NumericVector tau, NumericVector rho, NumericVector nu,
             prob_vec(m) = prob_Lj;
           }
           // make the rmultinom call
-          IntegerVector multi_out = oneMultinomCalt(prob_vec);
+          NumericVector prob_vec2 = prob_vec / sum(prob_vec);
+          IntegerVector multi_out = callRMultinom(prob_vec2);
 
           // update elements in matrix via another loop
           for (int m = 0; m < group_length; ++m){
+            // float x = j+m;
+            // Rcpp::Rcout << x;
             cov_mat(i,j + m) = multi_out(m);
           }
           // for the rmultinom call, have to append a 1 and remove the last value; update several values
