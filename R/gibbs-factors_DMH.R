@@ -289,8 +289,9 @@ setMethod("agcParam", signature("data.frame", "character", "character", "ANY",
                 #Step 2. Auxilary variable based on proposal
 
                 # Second call to Rcpp function
-                aux.p <- aux.var.outcome.cl(beta.p,trt.i,cov.i,N,10,adjacency,outcome.i,weights)
-
+                #aux.p <- aux.var.outcome.cl(beta.p,trt.i,cov.i,N,10,adjacency,outcome.i,weights)
+                aux.p <- auxVarOutcomeCpp(beta.p,trt.i[,1],cov.i,
+                                              N, 10,adjacency,unname(outcome.i[,1]),weights)
                 sum.aux.p <- c(sum(aux.p),
                                sum(aux.p*trt.i),
                                apply(cov.i,2,function(x) {sum(aux.p*x)}),

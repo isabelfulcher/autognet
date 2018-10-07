@@ -90,34 +90,29 @@ arma::mat auxVarCpp (NumericVector tau, NumericVector rho, NumericVector nu,
         // entity, then it is definitely a multinomial
 
         if(group_length > 1){
-          // Rcpp::Rcout << i;
+
           // Multinomial case
-          NumericVector prob_vec(group_length + 1);
-          prob_vec = prob_vec + 1;
+          NumericVector prob_vec(group_length + 1, 1.0);
           for (int m = 0; m < group_length; ++m){
-            int jprime = j + m; //already set j to 0 above whereas it is 1 in R
-            arma::vec rowVec = rho_mat(_,j);
+            int j_prime = j + m; //already set j to 0 above whereas it is 1 in R
+            arma::vec rowVec = rho_mat(_,j_prime);
             arma::mat covVec = vectorise(cov_mat.rows(i,i));
             arma::uvec whichN = adjacency[i];
-            arma::mat covAdjVec = cov_mat.cols(j,j);
+            arma::mat covAdjVec = cov_mat.cols(j_prime,j_prime);
             float weights_i = weights[i];
             float nei_w = sum(covAdjVec.elem(whichN)/weights_i);
-            float prob_Lj = exp(arma::as_scalar(tau[jprime] + dot(rowVec,covVec) + nu[jprime]*nei_w));
+            float prob_Lj = exp(arma::as_scalar(tau[j_prime] + dot(rowVec,covVec) + nu[j_prime]*nei_w));
             prob_vec(m) = prob_Lj;
           }
+
           // make the rmultinom call
           NumericVector prob_vec2 = prob_vec / sum(prob_vec);
           IntegerVector multi_out = callRMultinom(prob_vec2);
-
+          //Rcpp::Rcout << prob_vec2 << "\n";
           // update elements in matrix via another loop
           for (int m = 0; m < group_length; ++m){
-            // float x = j+m;
-            // Rcpp::Rcout << x;
-            cov_mat(i,j + m) = multi_out(m);
+             cov_mat(i,j + m) = multi_out(m);
           }
-          // for the rmultinom call, have to append a 1 and remove the last value; update several values
-          // cov.mat[i, j + (0:(group_length -1))] <- (rmultinom(1,1,c(prob_vec,1))[,1])[-1*group_length]
-
         } else if(group_function == 1){
 
           // Logistic / binary case
@@ -170,7 +165,7 @@ IntegerVector auxVarOutcomeCpp (NumericVector beta, IntegerVector trt, arma::mat
 
   IntegerVector vec = start;
 
-    // Number of iterations
+  // Number of iterations
   for (int r = 0; r < R; ++r){
     // Number of people
 

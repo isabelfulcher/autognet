@@ -247,7 +247,7 @@ CPPtime2 <- end_time - start_time
 test_that("R and C++ versions give the same outcome model values", {
   expect_true(all(summary(sapply(olist_cpp_2, sum)) == summary(sapply(olist_r_2, sum))))
   expect_true(all(olist_cpp_2[[8]] == olist_r_2[[8]]))
-  fc <- as.numeric(Rtime)/as.numeric(CPPtime)
-  message(fc)
-  expect_true(fc > 1)
+  fc2 <- as.numeric(Rtime2)/as.numeric(CPPtime2)
+  message(fc2)
+  expect_true(fc2 > 1)
 })

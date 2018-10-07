@@ -38,9 +38,11 @@ aux.var.cl <- function(tau, rho, nu, N, R, J, rho_mat,
             j_prime <- j + m
             exp(tau[j_prime] + sum(rho_mat[,j_prime]*cov.mat[i,]) + nu[j_prime]*sum(cov.mat[adjacency[[i]],j_prime]/weights[i]))
           })
-
+          #
+          pro_vec <- c(prob_vec,1)/sum(c(prob_vec,1))
+          #message(pro_vec)
           # for the rmultinom call, have to append a 1 and remove the last value; update several values
-          cov.mat[i, j + (0:(group_length -1))] <- (rmultinom(1,1,c(prob_vec,1))[,1])[-1*group_length]
+          cov.mat[i, j + (0:(group_length -1))] <- (rmultinom(1,1,pro_vec)[,1])[-1*group_length]
 
         } else if(group_function == 1){
 
