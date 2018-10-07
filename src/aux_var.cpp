@@ -122,7 +122,6 @@ arma::mat auxVarCpp (NumericVector tau, NumericVector rho, NumericVector nu,
 
           // Logistic / binary case
 
-          // Fix this probably have to use a loop because vectorized logic is hard here
           arma::vec rowVec = rho_mat(_,j);
           arma::mat covVec = vectorise(cov_mat.rows(i,i));
           arma::uvec whichN = adjacency[i];
@@ -143,3 +142,78 @@ arma::mat auxVarCpp (NumericVector tau, NumericVector rho, NumericVector nu,
 
 }
 
+//' Run Gibbs sampler for auxiliary outcome values using Rcpp
+//'
+//' Given the specific inputs, determine auxiliary outcome
+//' values using a Gibbs sampling procedure.
+//'
+//' @param beta A numeric vector of parameters from outcome model
+//' @param trt A numeric vector of the treatment values
+//' @param cov A numeric matrix for observed covariate values (starting values for chain)
+//' @param N An integer indicating the size of the interconnected network
+//' @param R An integer indicating the number of iterations for the Gibbs
+//' @param adjacency A binary matrix indicating connected units
+//' @param start A vector of the initializing values of
+//' @param weights A numeric vector indicating the number of neighbors for each node
+//' @return A numeric vector for auxiliary covariate outcomes
+//' as an element of {0,1}
+//'
+//'
+//' @export
+// [[Rcpp::export]]
+IntegerVector auxVarOutcomeCpp (NumericVector beta, IntegerVector trt, arma::mat cov,
+                                int N, int R, List adjacency, IntegerVector start, IntegerVector weights){
+
+
+  arma::mat cov_mat = cov;
+  int ncol = cov_mat.n_cols;
+
+  IntegerVector vec = start;
+
+    // Number of iterations
+  for (int r = 0; r < R; ++r){
+    // Number of people
+
+    for (int i = 0; i < N; ++i){
+      float weights_i = weights[i];
+      IntegerVector whichN = adjacency[i];
+
+      // Intercept term
+      float b0 = beta[0];
+
+      // Individual treatment term
+      float b1 = beta[1]*trt[i];
+
+      // Individual covariate terms
+      float b2 = 0;
+      for (int q = 2; q < 2 + ncol; ++q){
+        b2 = b2 + beta[q]*cov_mat(i,q-2);
+      }
+
+      // Neighbors outcome
+      NumericVector v_ss = as<NumericVector>(vec[whichN]);
+      float nei_w = sum(v_ss/weights_i);
+      float b3 = beta[2+ncol]*nei_w;
+
+      // Neighbors treatment
+      NumericVector t_ss = as<NumericVector>(trt[whichN]);
+      float nei_w2 = sum(t_ss/weights_i);
+      float b4 = beta[3+ncol]*nei_w2;
+
+      // Neighbors covariates
+      float b5 = 0;
+      arma::uvec whichN_arma = adjacency[i];
+      for (int q = 4 + ncol; q < 4 + ncol + ncol; ++q){
+        int cov_idx = q-4-ncol;
+        arma::mat cov_vec = cov_mat.cols(cov_idx,cov_idx);
+        float nei_w_cov = sum(cov_vec.elem(whichN_arma)/weights_i);
+        b5 = b5 + beta[q]*nei_w_cov;
+      }
+
+      float prob_Lj = R::plogis(b0 + b1 + b2 + b3 + b4 + b5 , 0, 1, 1, 0);
+      vec(i) = rcpp_rbinom_one(prob_Lj);
+    }
+  }
+  return(vec);
+
+}

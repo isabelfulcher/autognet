@@ -3,6 +3,7 @@
 export(agcEffect)
 export(agcParam)
 export(auxVarCpp)
+export(auxVarOutcomeCpp)
 import(Rcpp)
 import(methods)
 importFrom(MASS,mvrnorm)

@@ -61,12 +61,31 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// auxVarOutcomeCpp
+IntegerVector auxVarOutcomeCpp(NumericVector beta, IntegerVector trt, arma::mat cov, int N, int R, List adjacency, IntegerVector start, IntegerVector weights);
+RcppExport SEXP _autognet_auxVarOutcomeCpp(SEXP betaSEXP, SEXP trtSEXP, SEXP covSEXP, SEXP NSEXP, SEXP RSEXP, SEXP adjacencySEXP, SEXP startSEXP, SEXP weightsSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericVector >::type beta(betaSEXP);
+    Rcpp::traits::input_parameter< IntegerVector >::type trt(trtSEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type cov(covSEXP);
+    Rcpp::traits::input_parameter< int >::type N(NSEXP);
+    Rcpp::traits::input_parameter< int >::type R(RSEXP);
+    Rcpp::traits::input_parameter< List >::type adjacency(adjacencySEXP);
+    Rcpp::traits::input_parameter< IntegerVector >::type start(startSEXP);
+    Rcpp::traits::input_parameter< IntegerVector >::type weights(weightsSEXP);
+    rcpp_result_gen = Rcpp::wrap(auxVarOutcomeCpp(beta, trt, cov, N, R, adjacency, start, weights));
+    return rcpp_result_gen;
+END_RCPP
+}
 
 static const R_CallMethodDef CallEntries[] = {
     {"_autognet_oneMultinomCall", (DL_FUNC) &_autognet_oneMultinomCall, 1},
     {"_autognet_oneMultinomC", (DL_FUNC) &_autognet_oneMultinomC, 1},
     {"_autognet_callRMultinom", (DL_FUNC) &_autognet_callRMultinom, 1},
     {"_autognet_auxVarCpp", (DL_FUNC) &_autognet_auxVarCpp, 12},
+    {"_autognet_auxVarOutcomeCpp", (DL_FUNC) &_autognet_auxVarOutcomeCpp, 8},
     {NULL, NULL, 0}
 };
 

@@ -34,5 +34,5 @@ Collate:
     'autognet.R'
     'helperFunctions.R'
     'bayesModelFunctions.R'
-    'covariate-model.R'
-    'outcome-model.R'
+    'gibbs-factors_DMH.R'
+    'causal-estimates.R'

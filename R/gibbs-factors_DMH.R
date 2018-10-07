@@ -244,8 +244,11 @@ setMethod("agcParam", signature("data.frame", "character", "character", "ANY",
                 # Make symmetrical matrix of the rho values
                 rho_mat <- matrix(0, nrow = J, ncol = J)
                 rho_mat[lower.tri(rho_mat, diag=FALSE)] <- rho.p; rho_mat <- rho_mat + t(rho_mat)
+
+                # First call to Cpp function
                 aux.p.mat <- auxVarCpp(tau.p,rho.p,nu.p,N,R,J, rho_mat,
                                        adjacency,cov.i,weights,group_lengths,group_functions)
+
                 aux.p.cov.n <- apply(aux.p.mat,2,function(x) {(adjmat%*%x)/weights})
                 sum.aux.p <- c(unname(colSums(aux.p.mat)),
                                unname(colSums(aux.p.mat[,grid[,1, drop = FALSE], drop = FALSE] * aux.p.mat[,grid[,2, drop = FALSE], drop = FALSE]))*use_rho,
@@ -284,7 +287,10 @@ setMethod("agcParam", signature("data.frame", "character", "character", "ANY",
                 beta.p <- MASS::mvrnorm(1,beta[b,],scale*diag(P))
 
                 #Step 2. Auxilary variable based on proposal
+
+                # Second call to Rcpp function
                 aux.p <- aux.var.outcome.cl(beta.p,trt.i,cov.i,N,10,adjacency,outcome.i,weights)
+
                 sum.aux.p <- c(sum(aux.p),
                                sum(aux.p*trt.i),
                                apply(cov.i,2,function(x) {sum(aux.p*x)}),

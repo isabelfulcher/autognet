@@ -39,3 +39,25 @@ auxVarCpp <- function(tau, rho, nu, N, R, J, rho_mat, adjacency, cov_i, weights,
     .Call('_autognet_auxVarCpp', PACKAGE = 'autognet', tau, rho, nu, N, R, J, rho_mat, adjacency, cov_i, weights, group_lengths, group_functions)
 }
 
+#' Run Gibbs sampler for auxiliary outcome values using Rcpp
+#'
+#' Given the specific inputs, determine auxiliary outcome
+#' values using a Gibbs sampling procedure.
+#'
+#' @param beta A numeric vector of parameters from outcome model
+#' @param trt A numeric vector of the treatment values
+#' @param cov A numeric matrix for observed covariate values (starting values for chain)
+#' @param N An integer indicating the size of the interconnected network
+#' @param R An integer indicating the number of iterations for the Gibbs
+#' @param adjacency A binary matrix indicating connected units
+#' @param start A vector of the initializing values of
+#' @param weights A numeric vector indicating the number of neighbors for each node
+#' @return A numeric vector for auxiliary covariate outcomes
+#' as an element of {0,1}
+#'
+#'
+#' @export
+auxVarOutcomeCpp <- function(beta, trt, cov, N, R, adjacency, start, weights) {
+    .Call('_autognet_auxVarOutcomeCpp', PACKAGE = 'autognet', beta, trt, cov, N, R, adjacency, start, weights)
+}
+

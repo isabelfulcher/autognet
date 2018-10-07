@@ -1,4 +1,4 @@
-#' @include covariate-model.R
+#' @include gibbs-factors_DMH.R
 NULL
 
 #' Evaluate the out model for the Bayesian auto-g network computation.

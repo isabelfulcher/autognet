@@ -9,7 +9,7 @@ data <- rdsIn[[2]]
 
 # Preprocess covariates
 cov_df <- data[,-c(1,2)]
-cov_df$categorical <- factor(c(rep("1", 25), rep("2", 25), rep("3", 24), "4" ), levels = c("1", "2", "3", "4"))
+cov_df$categorical <- factor(c(rep("1", 20), rep("2", 30), rep("3", 24), "4" ), levels = c("1", "2", "3", "4"))
 process_covariate <- autognet:::.covariate_process(cov_df) # categorical --> binary
 covariate <- process_covariate[[1]]
 zero_pairs <- process_covariate[[2]]
@@ -146,13 +146,14 @@ set.seed(1)
 nIt <- 10
 start_time <- Sys.time()
 lapply(1:nIt, function(i){
-aux.p.mat.R <- autognet:::aux.var.cl(tau,rho,nu,N,R,J, rho_mat,
-                                     adjacency,cov.i,weights,group_lengths,group_functions)
+  aux.p.mat.R <- autognet:::aux.var.cl(tau,rho,nu,N,R,J, rho_mat,
+                                       adjacency,cov.i,weights,group_lengths,group_functions)
 }) -> olist_r
 end_time <- Sys.time()
 Rtime <- end_time - start_time
 
 # Have to change the index of adjacency
+adjacency_r <- adjacency
 for (i in 1:N){
   adjacency[[i]] <- adjacency[[i]] - 1
 }
@@ -169,6 +170,83 @@ CPPtime <- end_time - start_time
 test_that("R and C++ versions give the same covariate model values", {
   #expect_true(all(summary(sapply(olist_cpp, sum)) == summary(sapply(olist_r, sum))))
   #expect_true(all(olist_cpp[[8]][c(1,2),] == olist_r[[8]][c(1,2),]))
+  fc <- as.numeric(Rtime)/as.numeric(CPPtime)
+  message(fc)
+  expect_true(fc > 1)
+})
+
+
+#############################
+# New stuff for outcome model
+#############################
+aux.p.mat <- olist_cpp[[1]]
+aux.p.cov.n <- apply(aux.p.mat,2,function(x) {(adjmat%*%x)/weights})
+sum.aux.p <- c(unname(colSums(aux.p.mat)),
+               unname(colSums(aux.p.mat[,grid[,1, drop = FALSE], drop = FALSE] * aux.p.mat[,grid[,2, drop = FALSE], drop = FALSE]))*use_rho,
+               unname(colSums(aux.p.mat*aux.p.cov.n)))
+
+#Step 3. Calculate accept-reject ratio (everything is log-ed!)
+#interconnected units
+h.l1.p <- alpha.p%*%sum.l
+h.l1.c <- alpha[b,]%*%sum.l
+h.aux.p <- alpha.p%*%sum.aux.p
+h.aux.c <- alpha[b,]%*%sum.aux.p
+
+#independent units
+if(indepedents_present){
+  f.p.num <- alpha.p[1:(ncov+nrho)]%*%sum.l.indep
+  f.p.denom <- log(sum(v_get_sum(1:dim(l_grid)[1], l_grid, tau.p, rho.p, ncov)))
+  f.c.num <- alpha[b,1:(ncov+nrho)]%*%sum.l.indep
+  f.c.denom <- log(sum(v_get_sum(1:dim(l_grid)[1], l_grid, alpha[b,1:ncov], alpha[b,(ncov+1):(ncov+nrho)], ncov)))
+
+  #priors
+  #prior.p <- mvtnorm::dmvt(alpha.p,delta=rep(0,L),sigma=4*diag(L),df=3,log=TRUE)
+  #prior.c <- mvtnorm::dmvt(alpha[b,,c],delta=rep(0,L),sigma=4*diag(L),df=3,log=TRUE)
+
+  ratio <- h.l1.p + h.aux.c - h.l1.c - h.aux.p + f.p.num - n.indep*f.p.denom - f.c.num + n.indep*f.c.denom
+} else {
+  ratio <- h.l1.p + h.aux.c - h.l1.c - h.aux.p
+}
+
+accept <- rbinom(1,1,min(1,exp(ratio)))
+if (accept == 1){alpha[b+1,] <- alpha.p} else { alpha[b+1,] <- alpha[b,] }
+accept_alpha[b] <- accept
+
+##BETA##
+#Step 1. Proposal
+scale <- .005
+beta.p <- MASS::mvrnorm(1,beta[b,],scale*diag(P))
+
+#Step 2. Auxilary variable based on proposal
+
+# Second call to Rcpp function
+
+# Test R call
+set.seed(1)
+start_time <- Sys.time()
+lapply(1:nIt, function(i){
+  aux.p_r <- autognet:::aux.var.outcome.cl(beta.p,trt.i,cov.i,
+                                           N,10,adjacency_r,outcome.i,weights)[,1]
+
+}) -> olist_r_2
+end_time <- Sys.time()
+Rtime2 <- end_time - start_time
+
+
+# Test Cpp time
+set.seed(1)
+start_time <- Sys.time()
+lapply(1:nIt, function(i){
+  aux.p_cpp <- auxVarOutcomeCpp(beta.p,trt.i[,1],cov.i,
+                                N, 10,adjacency,unname(outcome.i[,1]),weights)
+}) -> olist_cpp_2
+end_time <- Sys.time()
+CPPtime2 <- end_time - start_time
+
+
+test_that("R and C++ versions give the same outcome model values", {
+  expect_true(all(summary(sapply(olist_cpp_2, sum)) == summary(sapply(olist_r_2, sum))))
+  expect_true(all(olist_cpp_2[[8]] == olist_r_2[[8]]))
   fc <- as.numeric(Rtime)/as.numeric(CPPtime)
   message(fc)
   expect_true(fc > 1)

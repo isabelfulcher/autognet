@@ -70,8 +70,6 @@ aux.var.outcome.cl <- function(beta,trt,cov,N,R,adjacency,start,weights){
   # weights is a vector of length N with the number of neighbors for each individual
 
   vec <- start
-  prob_y <- NA
-
   for (r in 1:R){
     for (i in 1:N){
       prob_outcome <- plogis(beta[1] + # intercept term
@@ -82,8 +80,6 @@ aux.var.outcome.cl <- function(beta,trt,cov,N,R,adjacency,start,weights){
                                sum(beta[(4+ncol(cov)+(1:ncol(cov)))]*colSums(cov[adjacency[[i]],(1:ncol(cov)),drop = FALSE]/weights[i])) # neighbor covariate
       )
 
-      # Isabel's sapply for the neighbor covariate line above
-      # sum(sapply(1:ncol(cov),function(x){beta[(4+ncol(cov)+x)]*colSums(cov[adjacency[[i]],x]/weights[i])}))
 
       vec[i] <- rbinom(1,1,prob_outcome)
     }
