@@ -170,6 +170,7 @@ CPPtime <- end_time - start_time
 test_that("R and C++ versions give the same covariate model values", {
   #expect_true(all(summary(sapply(olist_cpp, sum)) == summary(sapply(olist_r, sum))))
   #expect_true(all(olist_cpp[[8]][c(1,2),] == olist_r[[8]][c(1,2),]))
+  # Turns out that these won't be the same based on some Rmultinom internal workings
   fc <- as.numeric(Rtime)/as.numeric(CPPtime)
   message(fc)
   expect_true(fc > 1)
@@ -179,11 +180,11 @@ test_that("R and C++ versions give the same covariate model values", {
 #############################
 # New stuff for outcome model
 #############################
-aux.p.mat <- olist_cpp[[1]]
-aux.p.cov.n <- apply(aux.p.mat,2,function(x) {(adjmat%*%x)/weights})
-sum.aux.p <- c(unname(colSums(aux.p.mat)),
-               unname(colSums(aux.p.mat[,grid[,1, drop = FALSE], drop = FALSE] * aux.p.mat[,grid[,2, drop = FALSE], drop = FALSE]))*use_rho,
-               unname(colSums(aux.p.mat*aux.p.cov.n)))
+#aux.p.mat <- olist_cpp[[1]]
+#aux.p.cov.n <- apply(aux.p.mat,2,function(x) {(adjmat%*%x)/weights})
+#sum.aux.p <- c(unname(colSums(aux.p.mat)),
+#               unname(colSums(aux.p.mat[,grid[,1, drop = FALSE], drop = FALSE] * aux.p.mat[,grid[,2, drop = FALSE], drop = FALSE]))*use_rho,
+#               unname(colSums(aux.p.mat*aux.p.cov.n)))
 
 #Step 3. Calculate accept-reject ratio (everything is log-ed!)
 #interconnected units
@@ -231,7 +232,21 @@ lapply(1:nIt, function(i){
 }) -> olist_r_2
 end_time <- Sys.time()
 Rtime2 <- end_time - start_time
+get_sum <- function(idx, l_grid, tau, rho, n){
 
+  # Establish Ls for this iteration
+  l_vec <- l_grid[idx,]
+
+  # Izzie / Caleb formulation of sum--
+  # Make a temporary matrix; fill by row so have to transpose later
+  # see https://stackoverflow.com/questions/30787317/a-vector-to-an-upper-triangle-matrix-by-row-in-r
+  temp_m <- matrix(0, n, n); temp_m[lower.tri(temp_m, diag=FALSE)] <- rho
+
+  # intercept                   main
+  exp((tau%*%l_vec)[1,1] + sum(l_vec %*% t(l_vec) * t(temp_m)))
+
+}
+v_get_sum <- Vectorize(get_sum, "idx")
 
 # Test Cpp time
 set.seed(1)
@@ -243,7 +258,6 @@ lapply(1:nIt, function(i){
 end_time <- Sys.time()
 CPPtime2 <- end_time - start_time
 
-
 test_that("R and C++ versions give the same outcome model values", {
   expect_true(all(summary(sapply(olist_cpp_2, sum)) == summary(sapply(olist_r_2, sum))))
   expect_true(all(olist_cpp_2[[8]] == olist_r_2[[8]]))
@@ -251,3 +265,95 @@ test_that("R and C++ versions give the same outcome model values", {
   message(fc2)
   expect_true(fc2 > 1)
 })
+
+aux.p.mat <-olist_cpp_2[[1]]
+aux.p.cov.n <- apply(aux.p.mat,2,function(x) {(adjmat%*%x)/weights})
+sum.aux.p <- c(unname(colSums(aux.p.mat)),
+               unname(colSums(aux.p.mat[,grid[,1]] * aux.p.mat[,grid[,2]]))*use_rho,
+               unname(colSums(aux.p.mat*aux.p.cov.n)))
+
+#Step 3. Calculate accept-reject ratio (everything is log-ed!)
+#interconnected units
+#h.l1.p <- alpha.p%*%sum.l
+#h.l1.c <- alpha[b,]%*%sum.l
+#h.aux.p <- alpha.p%*%sum.aux.p
+#h.aux.c <- alpha[b,]%*%sum.aux.p
+
+#independent units
+tau.p <- 1
+rho.p <- 1
+f.p.num <- alpha.p[1:(ncov+nrho)]%*%sum.l.indep
+f.p.denom <- log(sum(v_get_sum(1:dim(l_grid)[1], l_grid, tau.p, rho.p, ncov)))
+f.c.num <- alpha[b,1:(ncov+nrho)]%*%sum.l.indep
+f.c.denom <- log(sum(v_get_sum(1:dim(l_grid)[1], l_grid, alpha[b,1:ncov], alpha[b,(ncov+1):(ncov+nrho)], ncov)))
+
+#priors
+#prior.p <- mvtnorm::dmvt(alpha.p,delta=rep(0,L),sigma=4*diag(L),df=3,log=TRUE)
+#prior.c <- mvtnorm::dmvt(alpha[b,],delta=rep(0,L),sigma=4*diag(L),df=3,log=TRUE)
+
+accept <- rbinom(1,1,min(1,exp(ratio)))
+if (accept == 1){alpha[b+1,] <- alpha.p} else { alpha[b+1,] <- alpha[b,] }
+accept_alpha[b] <- accept
+
+##BETA##
+#Step 1. Proposal
+scale <- .005
+beta.p <- MASS::mvrnorm(1,beta[b,],scale*diag(P))
+
+#Step 2. Auxilary variable based on proposal
+aux.p <- auxVarOutcomeCpp(beta.p,trt.i,cov.i,N,10,adjacency,outcome.i,weights)
+sum.aux.p <- c(sum(aux.p),
+               sum(aux.p*trt.i),
+               apply(cov.i,2,function(x) {sum(aux.p*x)}),
+               sum(aux.p*(adjmat%*%aux.p)/weights),
+               t(aux.p)%*%trt.n,
+               apply(cov.n,2,function(x) {t(aux.p)%*%x}))
+
+
+#Step 3. Calculate accept-reject ratio (everything is log-ed!)
+#interconnected units
+h.p <- beta.p%*%sum.y
+h.c <- beta[b,]%*%sum.y
+h.aux.p <- beta.p%*%sum.aux.p
+h.aux.c <- beta[b,]%*%sum.aux.p
+
+
+#priors
+#prior.p <- mvtnorm::dmvt(beta.p,delta=rep(0,P),sigma=4*diag(P),df=3,log=TRUE)
+#prior.c <- mvtnorm::dmvt(beta[b,],delta=rep(0,P),sigma=4*diag(P),df=3,log=TRUE)
+
+accept <- rbinom(1,1,min(1,exp(ratio)))
+if (accept == 1){beta[b+1,] <- beta.p} else { beta[b+1,] <- beta[b,] }
+accept_beta[b] <- accept
+
+pr_trt <- 0.5
+
+#####################
+# Run the causal estimand functions
+#####################
+
+psi_gamma <- vector(mode="numeric", length=B)
+psi_1_gamma <- vector(mode="numeric", length=B)
+psi_0_gamma <- vector(mode="numeric", length=B)
+alpha.thin <- alpha
+beta.thin <- beta
+
+
+tau <- alpha.thin[b,1:ncov]
+rho <- alpha.thin[b,(ncov+1):(ncov+nrho)]
+nu  <- alpha.thin[b,(ncov+nrho+1):L]
+
+## MAKE COVARIATE ARRAY ##
+cov.list <- autognet:::network.gibbs.cov(tau, rho, nu, ncov, R, N, adjacency, weights,
+                              group_lengths, group_functions)
+
+## NON-INDIVIDUAL GIBBS (overall effects) ##
+psi_gamma[b] <- autognet:::network.gibbs.out1(cov.list,beta.thin[b,],pr_trt,R,N,adjacency,weights)
+
+## INDIVIDUAL GIBBS (spillover and direct effects) ##
+psi_1_gamma[b] <- mean(sapply(1:N,autognet:::network.gibbs.out2,cov.list=cov.list,
+                              beta=beta.thin[b,],p=pr_trt,R=R,N=N,adjacency=adjacency,weights=weights,
+                              treatment_value=1))
+psi_0_gamma[b] <- mean(sapply(1:N,autognet:::network.gibbs.out2,cov.list=cov.list,
+                              beta=beta.thin[b,],p=pr_trt,R=R,N=N,adjacency=adjacency,weights=weights,
+                              treatment_value=0))

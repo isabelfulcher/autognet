@@ -111,7 +111,7 @@ arma::mat auxVarCpp (NumericVector tau, NumericVector rho, NumericVector nu,
           //Rcpp::Rcout << prob_vec2 << "\n";
           // update elements in matrix via another loop
           for (int m = 0; m < group_length; ++m){
-             cov_mat(i,j + m) = multi_out(m);
+            cov_mat(i,j + m) = multi_out(m);
           }
         } else if(group_function == 1){
 
@@ -210,5 +210,109 @@ IntegerVector auxVarOutcomeCpp (NumericVector beta, IntegerVector trt, arma::mat
     }
   }
   return(vec);
+
+}
+
+
+//' Run Gibbs sampler for network causal effects
+//'
+//' Given the specific inputs, determine auxiliary covariate
+//' values using a Gibbs sampling procedure.
+//'
+//' @param tau A numeric vector for the intercept terms in the covariate model
+//' @param rho A numeric vector for the correlation terms in the covariate model
+//' @param nu A numberic vector for the neighbor terms in the covariate model
+//' @param ncov An integer for the number of covariates
+//' @param R An integer indicating the number of iterations for the Gibbs
+//' @param N An integer indicating the size of the interconnected network
+//' @param rho_mat A numeric matrix for rho terms
+//' @param adjacency A binary matrix indicating connected units
+//' @param cov_i A numeric matrix for observed covariate values (starting values for chain)
+//' @param weights A numeric vector indicating the number of neighbors for each node
+//' @param group_lengths An integer vector indicating the number of categories for each variable
+//' @param group_functions An integer vector indicating the type of variable
+//' @return A numeric matrix for auxiliary covariate values
+//' between [0,1]
+//'
+//'
+//' @export
+// [[Rcpp::export]]
+arma::field<arma::mat> networkGibbsCpp (NumericVector tau, NumericVector rho, NumericVector nu,
+                                        int ncov, int R, int N, NumericMatrix rho_mat,
+                                        List adjacency,  IntegerVector weights, arma::mat cov_mat,
+                                        IntegerVector group_lengths, IntegerVector group_functions){
+
+  int J = ncov;
+
+  // Create a field class (aka list) with a pre-set amount of elements
+  arma::field<arma::mat> listOfMatricesOut(R);
+
+  // Number of iterations
+  for (int r = 0; r < R; ++r){
+
+    // Number of people
+    for (int i = 0; i < N; ++i){
+
+      // Index covariate
+      int j = 0;
+
+      // Number of groups (of covariates)
+      for (int group_index = 0; group_index < number_of_groups; ++group_index){
+
+        // Values associated with each group
+        int group_length = group_lengths[group_index];
+        int group_function = group_functions[group_index];
+
+        // group_length is the number of binarized covariates
+        // group_function is a numeric dictionary key that utilizes a value from the covariate_process function
+        // if group_length is > 1, meaning that we have multiple binarized covariates associated with a specific
+        // entity, then it is definitely a multinomial
+
+        if(group_length > 1){
+
+          // Multinomial case
+          NumericVector prob_vec(group_length + 1, 1.0);
+          for (int m = 0; m < group_length; ++m){
+            int j_prime = j + m; //already set j to 0 above whereas it is 1 in R
+            arma::vec rowVec = rho_mat(_,j_prime);
+            arma::mat covVec = vectorise(cov_mat.rows(i,i));
+            arma::uvec whichN = adjacency[i];
+            arma::mat covAdjVec = cov_mat.cols(j_prime,j_prime);
+            float weights_i = weights[i];
+            float nei_w = sum(covAdjVec.elem(whichN)/weights_i);
+            float prob_Lj = exp(arma::as_scalar(tau[j_prime] + dot(rowVec,covVec) + nu[j_prime]*nei_w));
+            prob_vec(m) = prob_Lj;
+          }
+
+          // make the rmultinom call
+          NumericVector prob_vec2 = prob_vec / sum(prob_vec);
+          IntegerVector multi_out = callRMultinom(prob_vec2);
+          //Rcpp::Rcout << prob_vec2 << "\n";
+          // update elements in matrix via another loop
+          for (int m = 0; m < group_length; ++m){
+            cov_mat(i,j + m) = multi_out(m);
+          }
+        } else if(group_function == 1){
+
+          // Logistic / binary case
+
+          arma::vec rowVec = rho_mat(_,j);
+          arma::mat covVec = vectorise(cov_mat.rows(i,i));
+          arma::uvec whichN = adjacency[i];
+          arma::mat covAdjVec = cov_mat.cols(j,j);
+          float weights_i = weights[i];
+          float nei_w = sum(covAdjVec.elem(whichN)/weights_i);
+          float prob_Lj = R::plogis(arma::as_scalar(tau[j] + dot(rowVec,covVec) + nu[j]*nei_w), 0, 1, 1, 0);
+          cov_mat(i,j) = rcpp_rbinom_one(prob_Lj); // prob_Lj
+
+        } // add in normal here once form is decided
+
+        j = j + group_length;
+
+      }
+    }
+    listOfMatricesOut(r) = cov_mat;
+  }
+  return(listOfMatricesOut);
 
 }
