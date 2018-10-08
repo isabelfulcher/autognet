@@ -223,26 +223,26 @@ network.gibbs.out1 <- function(cov.list,beta,p,
     cov_mat <- cov.list[[r]]
 
     for (i in 1:N){
-    if (p != 0){
-      a_bar[i] <- rbinom(1,1,p)
+      if (p != 0){
+        a_bar[i] <- rbinom(1,1,p)
 
-      #Generate Y given A,L
-      prob_outcome_1[r,i] <- plogis(beta[1] + # intercept term
-                                  beta[2]*a_bar[i] + # individual treatment term
-                                  beta[3:(2+J)]%*%cov_mat[i,] + # individual covariate term(s)
-                                  beta[(3+J)]*sum(outcome_1[adjacency[[i]]]/weights[i]) + # neighbor outcome
-                                  beta[(4+J)]*sum(a_bar[adjacency[[i]]]/weights[i]) + # neighbor treatment
-                                  sum(beta[(4+J+(1:J))]*colSums(cov_mat[adjacency[[i]],(1:J), drop = FALSE]/weights[i]))) # neighbor covariate
+        #Generate Y given A,L
+        prob_outcome_1[r,i] <- plogis(beta[1] + # intercept term
+                                        beta[2]*a_bar[i] + # individual treatment term
+                                        beta[3:(2+J)]%*%cov_mat[i,] + # individual covariate term(s)
+                                        beta[(3+J)]*sum(outcome_1[adjacency[[i]]]/weights[i]) + # neighbor outcome
+                                        beta[(4+J)]*sum(a_bar[adjacency[[i]]]/weights[i]) + # neighbor treatment
+                                        sum(beta[(4+J+(1:J))]*colSums(cov_mat[adjacency[[i]],(1:J), drop = FALSE]/weights[i]))) # neighbor covariate
 
-      outcome_1[i] <- rbinom(1,1,prob_outcome_1[r,i])
-    } else {
-      prob_outcome_1[r,i] <- plogis(beta[1] + # intercept term
-                                      beta[3:(2+J)]%*%cov_mat[i,] + # individual covariate term(s)
-                                      beta[(3+J)]*sum(outcome_1[adjacency[[i]]]/weights[i]) + # neighbor outcome
-                                      sum(beta[(4+J+(1:J))]*colSums(cov_mat[adjacency[[i]],(1:J), drop = FALSE]/weights[i]))) # neighbor covariate
+        outcome_1[i] <- rbinom(1,1,prob_outcome_1[r,i])
+      } else {
+        prob_outcome_1[r,i] <- plogis(beta[1] + # intercept term
+                                        beta[3:(2+J)]%*%cov_mat[i,] + # individual covariate term(s)
+                                        beta[(3+J)]*sum(outcome_1[adjacency[[i]]]/weights[i]) + # neighbor outcome
+                                        sum(beta[(4+J+(1:J))]*colSums(cov_mat[adjacency[[i]],(1:J), drop = FALSE]/weights[i]))) # neighbor covariate
 
-      outcome_1[i] <- rbinom(1,1,prob_outcome_1[r,i])
-    }
+        outcome_1[i] <- rbinom(1,1,prob_outcome_1[r,i])
+      }
     }
   }
   output <- mean(prob_outcome_1[R,]) #could just output the end result for each person (then take mean outside)
@@ -270,18 +270,18 @@ network.gibbs.out2 <- function(cov.list,beta,p,
     #Gibbs (conditional probabilities for each person)
     cov_mat <- cov.list[[r]]
     for (i in 1:N){
-        a_bar[i] <- rbinom(1,1,p)
-        a_bar[person] <- treatment_value
+      a_bar[i] <- rbinom(1,1,p)
+      a_bar[person] <- treatment_value
 
-        #Generate Y given A,L
-        prob_outcome[r,i] <- plogis(beta[1] + # intercept term
-                                        beta[2]*a_bar[i] + # individual treatment term
-                                        beta[3:(2+J)]%*%cov_mat[i,] + # individual covariate term(s)
-                                        beta[(3+J)]*sum(outcome[adjacency[[i]]]/weights[i]) + # neighbor outcome
-                                        beta[(4+J)]*sum(a_bar[adjacency[[i]]]/weights[i]) + # neighbor treatment
-                                        sum(beta[(4+J+(1:J))]*colSums(cov_mat[adjacency[[i]],(1:J), drop = FALSE]/weights[i]))) # neighbor covariate
+      #Generate Y given A,L
+      prob_outcome[r,i] <- plogis(beta[1] + # intercept term
+                                    beta[2]*a_bar[i] + # individual treatment term
+                                    beta[3:(2+J)]%*%cov_mat[i,] + # individual covariate term(s)
+                                    beta[(3+J)]*sum(outcome[adjacency[[i]]]/weights[i]) + # neighbor outcome
+                                    beta[(4+J)]*sum(a_bar[adjacency[[i]]]/weights[i]) + # neighbor treatment
+                                    sum(beta[(4+J+(1:J))]*colSums(cov_mat[adjacency[[i]],(1:J), drop = FALSE]/weights[i]))) # neighbor covariate
 
-        outcome[i] <- rbinom(1,1,prob_outcome[r,i])
+      outcome[i] <- rbinom(1,1,prob_outcome[r,i])
     }
   }
   output <- prob_outcome[R,person]

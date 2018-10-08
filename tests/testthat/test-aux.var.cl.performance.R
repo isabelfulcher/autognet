@@ -209,9 +209,7 @@ if(indepedents_present){
   ratio <- h.l1.p + h.aux.c - h.l1.c - h.aux.p
 }
 
-accept <- rbinom(1,1,min(1,exp(ratio)))
-if (accept == 1){alpha[b+1,] <- alpha.p} else { alpha[b+1,] <- alpha[b,] }
-accept_alpha[b] <- accept
+
 
 ##BETA##
 #Step 1. Proposal
@@ -291,10 +289,6 @@ f.c.denom <- log(sum(v_get_sum(1:dim(l_grid)[1], l_grid, alpha[b,1:ncov], alpha[
 #prior.p <- mvtnorm::dmvt(alpha.p,delta=rep(0,L),sigma=4*diag(L),df=3,log=TRUE)
 #prior.c <- mvtnorm::dmvt(alpha[b,],delta=rep(0,L),sigma=4*diag(L),df=3,log=TRUE)
 
-accept <- rbinom(1,1,min(1,exp(ratio)))
-if (accept == 1){alpha[b+1,] <- alpha.p} else { alpha[b+1,] <- alpha[b,] }
-accept_alpha[b] <- accept
-
 ##BETA##
 #Step 1. Proposal
 scale <- .005
@@ -344,8 +338,40 @@ rho <- alpha.thin[b,(ncov+1):(ncov+nrho)]
 nu  <- alpha.thin[b,(ncov+nrho+1):L]
 
 ## MAKE COVARIATE ARRAY ##
-cov.list <- autognet:::network.gibbs.cov(tau, rho, nu, ncov, R, N, adjacency, weights,
-                              group_lengths, group_functions)
+set.seed(1)
+start_time <- Sys.time()
+lapply(1:nIt, function(i){
+autognet:::network.gibbs.cov(tau, rho, nu,
+                                           ncov, R, N, adjacency_r, weights,
+                                           group_lengths, group_functions)
+
+}) -> olist_r_covlist
+end_time <- Sys.time()
+Rtime_cov <- end_time - start_time
+
+
+set.seed(1)
+start_time <- Sys.time()
+lapply(1:nIt, function(i){
+  networkGibbsOutcomeCpp(tau, rho, nu,
+                         ncov, R, N, rho_mat,
+                         adjacency, weights, cov.i,
+                         group_lengths, group_functions)
+
+}) -> olist_cpp_covlist
+end_time <- Sys.time()
+cpptime_cov <- end_time - start_time
+
+test_that("C++ version is faster for causal estimates", {
+  #expect_true(all(summary(sapply(olist_cpp, sum)) == summary(sapply(olist_r, sum))))
+  #expect_true(all(olist_cpp[[8]][c(1,2),] == olist_r[[8]][c(1,2),]))
+  # Turns out that these won't be the same based on some Rmultinom internal workings
+  fc <- as.numeric(Rtime_cov)/as.numeric(cpptime_cov)
+  message(fc)
+  expect_true(fc > 1)
+})
+
+cov.list <- olist_cpp_covlist[[1]]
 
 ## NON-INDIVIDUAL GIBBS (overall effects) ##
 psi_gamma[b] <- autognet:::network.gibbs.out1(cov.list,beta.thin[b,],pr_trt,R,N,adjacency,weights)

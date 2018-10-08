@@ -61,3 +61,29 @@ auxVarOutcomeCpp <- function(beta, trt, cov, N, R, adjacency, start, weights) {
     .Call('_autognet_auxVarOutcomeCpp', PACKAGE = 'autognet', beta, trt, cov, N, R, adjacency, start, weights)
 }
 
+#' Run Gibbs sampler for network causal effects
+#'
+#' Given the specific inputs, determine auxiliary covariate
+#' values using a Gibbs sampling procedure.
+#'
+#' @param tau A numeric vector for the intercept terms in the covariate model
+#' @param rho A numeric vector for the correlation terms in the covariate model
+#' @param nu A numberic vector for the neighbor terms in the covariate model
+#' @param ncov An integer for the number of covariates
+#' @param R An integer indicating the number of iterations for the Gibbs
+#' @param N An integer indicating the size of the interconnected network
+#' @param rho_mat A numeric matrix for rho terms
+#' @param adjacency A binary matrix indicating connected units
+#' @param cov_i A numeric matrix for observed covariate values (starting values for chain)
+#' @param weights A numeric vector indicating the number of neighbors for each node
+#' @param group_lengths An integer vector indicating the number of categories for each variable
+#' @param group_functions An integer vector indicating the type of variable
+#' @return A numeric matrix for auxiliary covariate values
+#' between [0,1]
+#'
+#'
+#' @export
+networkGibbsOutcomeCpp <- function(tau, rho, nu, ncov, R, N, rho_mat, adjacency, weights, cov_mat, group_lengths, group_functions) {
+    .Call('_autognet_networkGibbsOutcomeCpp', PACKAGE = 'autognet', tau, rho, nu, ncov, R, N, rho_mat, adjacency, weights, cov_mat, group_lengths, group_functions)
+}
+

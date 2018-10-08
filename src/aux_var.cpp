@@ -237,13 +237,13 @@ IntegerVector auxVarOutcomeCpp (NumericVector beta, IntegerVector trt, arma::mat
 //'
 //' @export
 // [[Rcpp::export]]
-arma::field<arma::mat> networkGibbsCpp (NumericVector tau, NumericVector rho, NumericVector nu,
-                                        int ncov, int R, int N, NumericMatrix rho_mat,
-                                        List adjacency,  IntegerVector weights, arma::mat cov_mat,
-                                        IntegerVector group_lengths, IntegerVector group_functions){
+arma::field<arma::mat> networkGibbsOutCovCpp (NumericVector tau, NumericVector rho, NumericVector nu,
+                                               int ncov, int R, int N, NumericMatrix rho_mat,
+                                               List adjacency,  IntegerVector weights, arma::mat cov_mat,
+                                               IntegerVector group_lengths, IntegerVector group_functions){
 
   int J = ncov;
-
+  int number_of_groups = group_lengths.size();
   // Create a field class (aka list) with a pre-set amount of elements
   arma::field<arma::mat> listOfMatricesOut(R);
 
@@ -252,6 +252,7 @@ arma::field<arma::mat> networkGibbsCpp (NumericVector tau, NumericVector rho, Nu
 
     // Number of people
     for (int i = 0; i < N; ++i){
+      float weights_i = weights[i];
 
       // Index covariate
       int j = 0;
@@ -314,5 +315,14 @@ arma::field<arma::mat> networkGibbsCpp (NumericVector tau, NumericVector rho, Nu
     listOfMatricesOut(r) = cov_mat;
   }
   return(listOfMatricesOut);
+
+}
+
+//' Run Gibbs sampler one
+//' @export
+// [[Rcpp::export]]
+NumericVector networkGibbsOut1Cpp (arma::field<arma::mat> cov_list, NumericVector beta, float p,
+                                              int R, int N,
+                                               List adjacency,  IntegerVector weights){
 
 }
