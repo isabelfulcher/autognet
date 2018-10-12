@@ -21,7 +21,8 @@ Imports:
   methods, 
   utils,
   parallel,
-  MASS
+  MASS,
+  mvtnorm
 Suggests:
     knitr
 URL: https://isabelfulcher.github.io/autognet/

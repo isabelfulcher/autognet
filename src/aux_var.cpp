@@ -317,12 +317,3 @@ arma::field<arma::mat> networkGibbsOutCovCpp (NumericVector tau, NumericVector r
   return(listOfMatricesOut);
 
 }
-
-//' Run Gibbs sampler one
-//' @export
-// [[Rcpp::export]]
-NumericVector networkGibbsOut1Cpp (arma::field<arma::mat> cov_list, NumericVector beta, float p,
-                                              int R, int N,
-                                               List adjacency,  IntegerVector weights){
-
-}

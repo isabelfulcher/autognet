@@ -227,8 +227,8 @@ setMethod("agcParam", signature("data.frame", "character", "character", "ANY",
               for (b in 1:B){
                 #Step 0. Starting values
                 if (b==1) {
-                  alpha[b,] <- MASS::mvrnorm(1,rep(0,L),.1*diag(L))
-                  beta[b,] <- MASS::mvrnorm(1,rep(0,P),.1*diag(P))
+                  alpha[b,] <- MASS::mvrnorm(1,rep(0,L),1*diag(L))
+                  beta[b,] <- MASS::mvrnorm(1,rep(0,P),1*diag(P))
                 }
 
                 ##ALPHA##
@@ -269,12 +269,16 @@ setMethod("agcParam", signature("data.frame", "character", "character", "ANY",
                   f.c.denom <- log(sum(v_get_sum(1:dim(l_grid)[1], l_grid, alpha[b,1:ncov], alpha[b,(ncov+1):(ncov+nrho)], ncov)))
 
                   #priors
-                  #prior.p <- mvtnorm::dmvt(alpha.p,delta=rep(0,L),sigma=4*diag(L),df=3,log=TRUE)
-                  #prior.c <- mvtnorm::dmvt(alpha[b,,c],delta=rep(0,L),sigma=4*diag(L),df=3,log=TRUE)
+                  prior.p <- mvtnorm::dmvt(alpha.p,delta=rep(0,L),sigma=4*diag(L),df=3,log=TRUE)
+                  prior.c <- mvtnorm::dmvt(alpha[b,],delta=rep(0,L),sigma=4*diag(L),df=3,log=TRUE)
 
-                  ratio <- h.l1.p + h.aux.c - h.l1.c - h.aux.p + f.p.num - n.indep*f.p.denom - f.c.num + n.indep*f.c.denom
+                  ratio <- (prior.p - prior.c + h.l1.p + h.aux.c - h.l1.c - h.aux.p +
+                              f.p.num - n.indep*f.p.denom - f.c.num + n.indep*f.c.denom)
                 } else {
-                  ratio <- h.l1.p + h.aux.c - h.l1.c - h.aux.p
+                  prior.p <- mvtnorm::dmvt(alpha.p,delta=rep(0,L),sigma=4*diag(L),df=3,log=TRUE)
+                  prior.c <- mvtnorm::dmvt(alpha[b,],delta=rep(0,L),sigma=4*diag(L),df=3,log=TRUE)
+
+                  ratio <- (prior.p - prior.c + h.l1.p + h.aux.c - h.l1.c - h.aux.p)
                 }
 
                 accept <- rbinom(1,1,min(1,exp(ratio)))
@@ -291,7 +295,7 @@ setMethod("agcParam", signature("data.frame", "character", "character", "ANY",
                 # Second call to Rcpp function
                 #aux.p <- aux.var.outcome.cl(beta.p,trt.i,cov.i,N,10,adjacency,outcome.i,weights)
                 aux.p <- auxVarOutcomeCpp(beta.p,trt.i[,1],cov.i,
-                                              N, 10,adjacency,unname(outcome.i[,1]),weights)
+                                              N,R,adjacency,unname(outcome.i[,1]),weights)
                 sum.aux.p <- c(sum(aux.p),
                                sum(aux.p*trt.i),
                                apply(cov.i,2,function(x) {sum(aux.p*x)}),
@@ -316,12 +320,15 @@ setMethod("agcParam", signature("data.frame", "character", "character", "ANY",
                   f.c.denom <- sum(log(1+exp(design.mat.indep%*%beta[b,1:(2+ncov)])))
 
                   #priors
-                  #prior.p <- mvtnorm::dmvt(beta.p,delta=rep(0,P),sigma=4*diag(P),df=3,log=TRUE)
-                  #prior.c <- mvtnorm::dmvt(beta[b,,c],delta=rep(0,P),sigma=4*diag(P),df=3,log=TRUE)
+                  prior.p <- mvtnorm::dmvt(beta.p,delta=rep(0,P),sigma=4*diag(P),df=3,log=TRUE)
+                  prior.c <- mvtnorm::dmvt(beta[b,],delta=rep(0,P),sigma=4*diag(P),df=3,log=TRUE)
 
-                  ratio <- h.p + h.aux.c - h.c - h.aux.p + f.p.num - f.p.denom - f.c.num + f.c.denom
+                  ratio <- (prior.p - prior.c + h.p + h.aux.c - h.c - h.aux.p + f.p.num - f.p.denom - f.c.num + f.c.denom)
                 } else {
-                  ratio <- h.p + h.aux.c - h.c
+                  prior.p <- mvtnorm::dmvt(beta.p,delta=rep(0,P),sigma=4*diag(P),df=3,log=TRUE)
+                  prior.c <- mvtnorm::dmvt(beta[b,],delta=rep(0,P),sigma=4*diag(P),df=3,log=TRUE)
+
+                  ratio <- (prior.p - prior.c + h.p + h.aux.c - h.c - h.aux.p)
                 }
                 accept <- rbinom(1,1,min(1,exp(ratio)))
                 if (accept == 1){beta[b+1,] <- beta.p} else { beta[b+1,] <- beta[b,] }
