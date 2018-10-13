@@ -40,6 +40,18 @@ NULL
 #' the vector is of length greater than 1, then multiple chains with
 #' both values as a seed will be run in parallel.
 #'
+#' @param scale.alpha A numeric vector of values for the
+#' parameters of the covariate model proposal distribution
+#' variance. By default, a scalar of .005 is applied to all values. If you
+#' wish to replace you can supply another scalar or the appropriate length
+#' vector.
+#'
+#' @param scale.beta A numeric vector of values for the
+#' parameters of the outcome model proposal distribution
+#' variance. By default, a scalar of .005 is applied to all values. If you
+#' wish to replace you can supply another scalar or the appropriate length
+#' vector.
+#'
 #' @return An S3 object of type \code{agcParamClass} that contains essential
 #' values for the covariate model.
 #'
@@ -66,15 +78,16 @@ NULL
 #' @export
 setGeneric(name = "agcParam",
            def = function(data, treatment, outcome, adjmat,
-                          B = 25000, R = 10, seed = c(1))
+                          B = 25000, R = 10, seed = c(1),
+                          scale.alpha=.005,scale.beta=.005)
 
              standardGeneric("agcParam"))
 
 #' @rdname agcParam
 setMethod("agcParam", signature("data.frame", "character", "character", "ANY",
-                                "ANY", "ANY", "ANY"),
+                                "ANY", "ANY", "ANY", "ANY", "ANY"),
           definition = function(data, treatment, outcome, adjmat,
-                                B, R, seed){
+                                B, R, seed,scale.alpha,scale.beta){
 
             "%ni%" <- Negate("%in%")
 
@@ -102,6 +115,8 @@ setMethod("agcParam", signature("data.frame", "character", "character", "ANY",
             if(!all.equal(nadj1, nadj2, ndata)){
               stop("Error: ensure the same number of rows/columns matches the number of rows in the supplied data frame")
             }
+
+            #put in an error if lenth of scale.alpha or scale.beta is incorrect
 
             # Preprocess covariates and process output of helper function
             process_covariate <-.covariate_process(covariate_data_frame) # categorical --> binary
@@ -233,8 +248,7 @@ setMethod("agcParam", signature("data.frame", "character", "character", "ANY",
 
                 ##ALPHA##
                 #Step 1. Proposal
-                scale <- .005
-                alpha.p <- MASS::mvrnorm(1,alpha[b,],scale*diag(L))*use_rho_all
+                alpha.p <- MASS::mvrnorm(1,alpha[b,],scale.alpha*diag(L))*use_rho_all
 
                 #assign tau, rho, nu
                 tau.p <- alpha.p[1:ncov]
@@ -287,8 +301,7 @@ setMethod("agcParam", signature("data.frame", "character", "character", "ANY",
 
                 ##BETA##
                 #Step 1. Proposal
-                scale <- .005
-                beta.p <- MASS::mvrnorm(1,beta[b,],scale*diag(P))
+                beta.p <- MASS::mvrnorm(1,beta[b,],scale.beta*diag(P))
 
                 #Step 2. Auxilary variable based on proposal
 
