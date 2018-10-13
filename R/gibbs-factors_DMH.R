@@ -94,7 +94,7 @@ setMethod("agcParam", signature("data.frame", "character", "character", "ANY",
             stopifnot(treatment %in% possibilities)
             stopifnot(length(outcome) == 1)
             stopifnot(length(treatment) == 1)
-            stopifnot(length(seed_value) == 1)
+            stopifnot(length(seed) == 1)
 
             # Setup covariate dataframe
             covariate_data_frame <- data[ , !(names(data) %in% c(treatment, outcome))]
@@ -233,7 +233,7 @@ setMethod("agcParam", signature("data.frame", "character", "character", "ANY",
             # Last parameters needed for MCMC
             J <- dim(covariate)[2] # number of covariates
 
-            set.seed(seed_value)
+            set.seed(seed)
 
             # Main loop for the MCMC
             pb <- txtProgressBar(min = 1, max = B, style = 3)
@@ -361,10 +361,8 @@ setMethod("agcParam", signature("data.frame", "character", "character", "ANY",
             outlist <- list(alpha,beta,accept_alpha,accept_beta,use_rho_all,group_lengths,group_functions, adjmat)
             names(outlist) <- c("alpha", "beta", "accept_alpha", "accept_beta", "use_rho_all", "group_lengths", "group_functions", "adjmat")
 
-            return(outlist)
-
-
             # Name according to the chain
             class(outlist) <- append(class(outlist),"agcParamClass")
-            return(outoutlist)
+            return(outlist)
+
           })

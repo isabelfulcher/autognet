@@ -180,11 +180,11 @@ test_that("R and C++ versions give the same covariate model values", {
 #############################
 # New stuff for outcome model
 #############################
-#aux.p.mat <- olist_cpp[[1]]
-#aux.p.cov.n <- apply(aux.p.mat,2,function(x) {(adjmat%*%x)/weights})
-#sum.aux.p <- c(unname(colSums(aux.p.mat)),
-#               unname(colSums(aux.p.mat[,grid[,1, drop = FALSE], drop = FALSE] * aux.p.mat[,grid[,2, drop = FALSE], drop = FALSE]))*use_rho,
-#               unname(colSums(aux.p.mat*aux.p.cov.n)))
+aux.p.mat <- olist_cpp[[1]]
+aux.p.cov.n <- apply(aux.p.mat,2,function(x) {(adjmat%*%x)/weights})
+sum.aux.p <- c(unname(colSums(aux.p.mat)),
+               unname(colSums(aux.p.mat[,grid[,1, drop = FALSE], drop = FALSE] * aux.p.mat[,grid[,2, drop = FALSE], drop = FALSE]))*use_rho,
+               unname(colSums(aux.p.mat*aux.p.cov.n)))
 
 #Step 3. Calculate accept-reject ratio (everything is log-ed!)
 #interconnected units
