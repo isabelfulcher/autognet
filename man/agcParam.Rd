@@ -7,10 +7,10 @@
 \title{Fit the covariate model for the Bayesian auto-g network computation.}
 \usage{
 agcParam(data, treatment, outcome, adjmat, B = 25000, R = 10,
-  seed = c(1), scale.alpha = 0.005, scale.beta = 0.005)
+  seed = 1, scale.alpha = 0.005, scale.beta = 0.005)
 
 \S4method{agcParam}{data.frame,character,character}(data, treatment,
-  outcome, adjmat, B = 25000, R = 10, seed = c(1),
+  outcome, adjmat, B = 25000, R = 10, seed = 1,
   scale.alpha = 0.005, scale.beta = 0.005)
 }
 \arguments{
@@ -35,10 +35,8 @@ Default = 25,000}
 \item{R}{The number of iterations for the Gibbs inner loop.
 Default = 10.}
 
-\item{seed}{An integer vector of the values for \code{set.seed}.
-By default, only c(1), which runs one chain with a seed of 1. If
-the vector is of length greater than 1, then multiple chains with
-both values as a seed will be run in parallel.}
+\item{seed}{An integer value for \code{set.seed}.
+By default, only \code{1}, which runs one chain with a seed of 1.}
 
 \item{scale.alpha}{A numeric vector of values for the
 parameters of the covariate model proposal distribution

@@ -35,10 +35,8 @@ NULL
 #' @param R The number of iterations for the Gibbs inner loop.
 #' Default = 10.
 #'
-#' @param seed An integer vector of the values for \code{set.seed}.
-#' By default, only c(1), which runs one chain with a seed of 1. If
-#' the vector is of length greater than 1, then multiple chains with
-#' both values as a seed will be run in parallel.
+#' @param seed An integer value for \code{set.seed}.
+#' By default, only \code{1}, which runs one chain with a seed of 1.
 #'
 #' @param scale.alpha A numeric vector of values for the
 #' parameters of the covariate model proposal distribution
@@ -59,7 +57,6 @@ NULL
 #' @importFrom utils setTxtProgressBar txtProgressBar
 #' @import methods
 #' @import Rcpp
-#' @importFrom parallel mclapply
 #'
 #' @examples
 #'
@@ -78,7 +75,7 @@ NULL
 #' @export
 setGeneric(name = "agcParam",
            def = function(data, treatment, outcome, adjmat,
-                          B = 25000, R = 10, seed = c(1),
+                          B = 25000, R = 10, seed = 1,
                           scale.alpha=.005,scale.beta=.005)
 
              standardGeneric("agcParam"))
@@ -97,6 +94,7 @@ setMethod("agcParam", signature("data.frame", "character", "character", "ANY",
             stopifnot(treatment %in% possibilities)
             stopifnot(length(outcome) == 1)
             stopifnot(length(treatment) == 1)
+            stopifnot(length(seed_value) == 1)
 
             # Setup covariate dataframe
             covariate_data_frame <- data[ , !(names(data) %in% c(treatment, outcome))]
@@ -149,6 +147,10 @@ setMethod("agcParam", signature("data.frame", "character", "character", "ANY",
             nrho <- choose(ncov,2) #number of rho terms in covariate model
             L <- ncov*2 + nrho #number of params in covariate model
             P <- 2 + 2 + ncov*2 #number of params in outcome model
+
+            # Adjust the scaling of the variances
+            stopifnot((L == length(scale.alpha)) | length(scale.alpha) == 1)
+            stopifnot((P == length(scale.beta))  | length(scale.beta) == 1)
 
             #individual terms
             ##interconnected units
@@ -231,143 +233,138 @@ setMethod("agcParam", signature("data.frame", "character", "character", "ANY",
             # Last parameters needed for MCMC
             J <- dim(covariate)[2] # number of covariates
 
-            # Parallelize over the chains
-            mclapply(seed, function(seed_value){
+            set.seed(seed_value)
 
-              set.seed(seed_value)
+            # Main loop for the MCMC
+            pb <- txtProgressBar(min = 1, max = B, style = 3)
 
-              # Main loop for the MCMC
-              pb <- txtProgressBar(min = 1, max = B, style = 3)
-
-              for (b in 1:B){
-                #Step 0. Starting values
-                if (b==1) {
-                  alpha[b,] <- MASS::mvrnorm(1,rep(0,L),1*diag(L))
-                  beta[b,] <- MASS::mvrnorm(1,rep(0,P),1*diag(P))
-                }
-
-                ##ALPHA##
-                #Step 1. Proposal
-                alpha.p <- MASS::mvrnorm(1,alpha[b,],scale.alpha*diag(L))*use_rho_all
-
-                #assign tau, rho, nu
-                tau.p <- alpha.p[1:ncov]
-                rho.p <- alpha.p[(ncov+1):(ncov+nrho)]
-                nu.p <- alpha.p[(ncov+nrho+1):L]
-
-                # Make symmetrical matrix of the rho values
-                rho_mat <- matrix(0, nrow = J, ncol = J)
-                rho_mat[lower.tri(rho_mat, diag=FALSE)] <- rho.p; rho_mat <- rho_mat + t(rho_mat)
-
-                # First call to Cpp function
-                aux.p.mat <- auxVarCpp(tau.p,rho.p,nu.p,N,R,J, rho_mat,
-                                       adjacency,cov.i,weights,group_lengths,group_functions)
-
-                aux.p.cov.n <- apply(aux.p.mat,2,function(x) {(adjmat%*%x)/weights})
-                sum.aux.p <- c(unname(colSums(aux.p.mat)),
-                               unname(colSums(aux.p.mat[,grid[,1, drop = FALSE], drop = FALSE] * aux.p.mat[,grid[,2, drop = FALSE], drop = FALSE]))*use_rho,
-                               unname(colSums(aux.p.mat*aux.p.cov.n)))
-
-                #Step 3. Calculate accept-reject ratio (everything is log-ed!)
-                #interconnected units
-                h.l1.p <- alpha.p%*%sum.l
-                h.l1.c <- alpha[b,]%*%sum.l
-                h.aux.p <- alpha.p%*%sum.aux.p
-                h.aux.c <- alpha[b,]%*%sum.aux.p
-
-                #independent units
-                if(indepedents_present){
-                  f.p.num <- alpha.p[1:(ncov+nrho)]%*%sum.l.indep
-                  f.p.denom <- log(sum(v_get_sum(1:dim(l_grid)[1], l_grid, tau.p, rho.p, ncov)))
-                  f.c.num <- alpha[b,1:(ncov+nrho)]%*%sum.l.indep
-                  f.c.denom <- log(sum(v_get_sum(1:dim(l_grid)[1], l_grid, alpha[b,1:ncov], alpha[b,(ncov+1):(ncov+nrho)], ncov)))
-
-                  #priors
-                  prior.p <- mvtnorm::dmvt(alpha.p,delta=rep(0,L),sigma=4*diag(L),df=3,log=TRUE)
-                  prior.c <- mvtnorm::dmvt(alpha[b,],delta=rep(0,L),sigma=4*diag(L),df=3,log=TRUE)
-
-                  ratio <- (prior.p - prior.c + h.l1.p + h.aux.c - h.l1.c - h.aux.p +
-                              f.p.num - n.indep*f.p.denom - f.c.num + n.indep*f.c.denom)
-                } else {
-                  prior.p <- mvtnorm::dmvt(alpha.p,delta=rep(0,L),sigma=4*diag(L),df=3,log=TRUE)
-                  prior.c <- mvtnorm::dmvt(alpha[b,],delta=rep(0,L),sigma=4*diag(L),df=3,log=TRUE)
-
-                  ratio <- (prior.p - prior.c + h.l1.p + h.aux.c - h.l1.c - h.aux.p)
-                }
-
-                accept <- rbinom(1,1,min(1,exp(ratio)))
-                if (accept == 1){alpha[b+1,] <- alpha.p} else { alpha[b+1,] <- alpha[b,] }
-                accept_alpha[b] <- accept
-
-                ##BETA##
-                #Step 1. Proposal
-                beta.p <- MASS::mvrnorm(1,beta[b,],scale.beta*diag(P))
-
-                #Step 2. Auxilary variable based on proposal
-
-                # Second call to Rcpp function
-                #aux.p <- aux.var.outcome.cl(beta.p,trt.i,cov.i,N,10,adjacency,outcome.i,weights)
-                aux.p <- auxVarOutcomeCpp(beta.p,trt.i[,1],cov.i,
-                                              N,R,adjacency,unname(outcome.i[,1]),weights)
-                sum.aux.p <- c(sum(aux.p),
-                               sum(aux.p*trt.i),
-                               apply(cov.i,2,function(x) {sum(aux.p*x)}),
-                               sum(aux.p*(adjmat%*%aux.p)/weights),
-                               t(aux.p)%*%trt.n,
-                               apply(cov.n,2,function(x) {t(aux.p)%*%x}))
-
-                #Step 3. Calculate accept-reject ratio (everything is log-ed!)
-                #interconnected units
-                h.p <- beta.p%*%sum.y
-                h.c <- beta[b,]%*%sum.y
-                h.aux.p <- beta.p%*%sum.aux.p
-                h.aux.c <- beta[b,]%*%sum.aux.p
-
-                if(indepedents_present){
-
-                  #independent units
-
-                  f.p.num <- beta.p[1:(2+ncov)]%*%sum.y.indep
-                  f.p.denom <- sum(log(1+ exp(design.mat.indep%*%beta.p[1:(2+ncov)])))
-                  f.c.num <- beta[b,1:(2+ncov)]%*%sum.y.indep
-                  f.c.denom <- sum(log(1+exp(design.mat.indep%*%beta[b,1:(2+ncov)])))
-
-                  #priors
-                  prior.p <- mvtnorm::dmvt(beta.p,delta=rep(0,P),sigma=4*diag(P),df=3,log=TRUE)
-                  prior.c <- mvtnorm::dmvt(beta[b,],delta=rep(0,P),sigma=4*diag(P),df=3,log=TRUE)
-
-                  ratio <- (prior.p - prior.c + h.p + h.aux.c - h.c - h.aux.p + f.p.num - f.p.denom - f.c.num + f.c.denom)
-                } else {
-                  prior.p <- mvtnorm::dmvt(beta.p,delta=rep(0,P),sigma=4*diag(P),df=3,log=TRUE)
-                  prior.c <- mvtnorm::dmvt(beta[b,],delta=rep(0,P),sigma=4*diag(P),df=3,log=TRUE)
-
-                  ratio <- (prior.p - prior.c + h.p + h.aux.c - h.c - h.aux.p)
-                }
-                accept <- rbinom(1,1,min(1,exp(ratio)))
-                if (accept == 1){beta[b+1,] <- beta.p} else { beta[b+1,] <- beta[b,] }
-                accept_beta[b] <- accept
-                setTxtProgressBar(pb, b)
+            for (b in 1:B){
+              #Step 0. Starting values
+              if (b==1) {
+                alpha[b,] <- MASS::mvrnorm(1,rep(0,L),1*diag(L))
+                beta[b,] <- MASS::mvrnorm(1,rep(0,P),1*diag(P))
               }
 
-              #save labels
-              rho.terms <- apply(grid, 1, function(pair){char <- paste(pair, collapse = "_")})
-              cov.lab <- c(colnames(covariate),rho.terms,paste("neighbors",colnames(covariate)))
-              outcome.lab <- c(colnames(data[,1:2]),colnames(covariate),
-                               paste("neighbors",colnames(data[,1:2])),
-                               paste("neighbors",colnames(covariate)))
+              ##ALPHA##
+              #Step 1. Proposal
+              alpha.p <- MASS::mvrnorm(1,alpha[b,],scale.alpha*diag(L))*use_rho_all
 
-              colnames(alpha) <- cov.lab
-              colnames(beta) <- outcome.lab
+              #assign tau, rho, nu
+              tau.p <- alpha.p[1:ncov]
+              rho.p <- alpha.p[(ncov+1):(ncov+nrho)]
+              nu.p <- alpha.p[(ncov+nrho+1):L]
 
-              outlist <- list(alpha,beta,accept_alpha,accept_beta,use_rho_all,group_lengths,group_functions, adjmat)
-              names(outlist) <- c("alpha", "beta", "accept_alpha", "accept_beta", "use_rho_all", "group_lengths", "group_functions", "adjmat")
+              # Make symmetrical matrix of the rho values
+              rho_mat <- matrix(0, nrow = J, ncol = J)
+              rho_mat[lower.tri(rho_mat, diag=FALSE)] <- rho.p; rho_mat <- rho_mat + t(rho_mat)
 
-              return(outlist)
+              # First call to Cpp function
+              aux.p.mat <- auxVarCpp(tau.p,rho.p,nu.p,N,R,J, rho_mat,
+                                     adjacency,cov.i,weights,group_lengths,group_functions)
 
-            }) -> outoutlist
+              aux.p.cov.n <- apply(aux.p.mat,2,function(x) {(adjmat%*%x)/weights})
+              sum.aux.p <- c(unname(colSums(aux.p.mat)),
+                             unname(colSums(aux.p.mat[,grid[,1, drop = FALSE], drop = FALSE] * aux.p.mat[,grid[,2, drop = FALSE], drop = FALSE]))*use_rho,
+                             unname(colSums(aux.p.mat*aux.p.cov.n)))
+
+              #Step 3. Calculate accept-reject ratio (everything is log-ed!)
+              #interconnected units
+              h.l1.p <- alpha.p%*%sum.l
+              h.l1.c <- alpha[b,]%*%sum.l
+              h.aux.p <- alpha.p%*%sum.aux.p
+              h.aux.c <- alpha[b,]%*%sum.aux.p
+
+              #independent units
+              if(indepedents_present){
+                f.p.num <- alpha.p[1:(ncov+nrho)]%*%sum.l.indep
+                f.p.denom <- log(sum(v_get_sum(1:dim(l_grid)[1], l_grid, tau.p, rho.p, ncov)))
+                f.c.num <- alpha[b,1:(ncov+nrho)]%*%sum.l.indep
+                f.c.denom <- log(sum(v_get_sum(1:dim(l_grid)[1], l_grid, alpha[b,1:ncov], alpha[b,(ncov+1):(ncov+nrho)], ncov)))
+
+                #priors
+                prior.p <- mvtnorm::dmvt(alpha.p,delta=rep(0,L),sigma=4*diag(L),df=3,log=TRUE)
+                prior.c <- mvtnorm::dmvt(alpha[b,],delta=rep(0,L),sigma=4*diag(L),df=3,log=TRUE)
+
+                ratio <- (prior.p - prior.c + h.l1.p + h.aux.c - h.l1.c - h.aux.p +
+                            f.p.num - n.indep*f.p.denom - f.c.num + n.indep*f.c.denom)
+              } else {
+                prior.p <- mvtnorm::dmvt(alpha.p,delta=rep(0,L),sigma=4*diag(L),df=3,log=TRUE)
+                prior.c <- mvtnorm::dmvt(alpha[b,],delta=rep(0,L),sigma=4*diag(L),df=3,log=TRUE)
+
+                ratio <- (prior.p - prior.c + h.l1.p + h.aux.c - h.l1.c - h.aux.p)
+              }
+
+              accept <- rbinom(1,1,min(1,exp(ratio)))
+              if (accept == 1){alpha[b+1,] <- alpha.p} else { alpha[b+1,] <- alpha[b,] }
+              accept_alpha[b] <- accept
+
+              ##BETA##
+              #Step 1. Proposal
+              beta.p <- MASS::mvrnorm(1,beta[b,],scale.beta*diag(P))
+
+              #Step 2. Auxilary variable based on proposal
+
+              # Second call to Rcpp function
+              #aux.p <- aux.var.outcome.cl(beta.p,trt.i,cov.i,N,10,adjacency,outcome.i,weights)
+              aux.p <- auxVarOutcomeCpp(beta.p,trt.i[,1],cov.i,
+                                        N,R,adjacency,unname(outcome.i[,1]),weights)
+              sum.aux.p <- c(sum(aux.p),
+                             sum(aux.p*trt.i),
+                             apply(cov.i,2,function(x) {sum(aux.p*x)}),
+                             sum(aux.p*(adjmat%*%aux.p)/weights),
+                             t(aux.p)%*%trt.n,
+                             apply(cov.n,2,function(x) {t(aux.p)%*%x}))
+
+              #Step 3. Calculate accept-reject ratio (everything is log-ed!)
+              #interconnected units
+              h.p <- beta.p%*%sum.y
+              h.c <- beta[b,]%*%sum.y
+              h.aux.p <- beta.p%*%sum.aux.p
+              h.aux.c <- beta[b,]%*%sum.aux.p
+
+              if(indepedents_present){
+
+                #independent units
+
+                f.p.num <- beta.p[1:(2+ncov)]%*%sum.y.indep
+                f.p.denom <- sum(log(1+ exp(design.mat.indep%*%beta.p[1:(2+ncov)])))
+                f.c.num <- beta[b,1:(2+ncov)]%*%sum.y.indep
+                f.c.denom <- sum(log(1+exp(design.mat.indep%*%beta[b,1:(2+ncov)])))
+
+                #priors
+                prior.p <- mvtnorm::dmvt(beta.p,delta=rep(0,P),sigma=4*diag(P),df=3,log=TRUE)
+                prior.c <- mvtnorm::dmvt(beta[b,],delta=rep(0,P),sigma=4*diag(P),df=3,log=TRUE)
+
+                ratio <- (prior.p - prior.c + h.p + h.aux.c - h.c - h.aux.p + f.p.num - f.p.denom - f.c.num + f.c.denom)
+              } else {
+                prior.p <- mvtnorm::dmvt(beta.p,delta=rep(0,P),sigma=4*diag(P),df=3,log=TRUE)
+                prior.c <- mvtnorm::dmvt(beta[b,],delta=rep(0,P),sigma=4*diag(P),df=3,log=TRUE)
+
+                ratio <- (prior.p - prior.c + h.p + h.aux.c - h.c - h.aux.p)
+              }
+              accept <- rbinom(1,1,min(1,exp(ratio)))
+              if (accept == 1){beta[b+1,] <- beta.p} else { beta[b+1,] <- beta[b,] }
+              accept_beta[b] <- accept
+              setTxtProgressBar(pb, b)
+            }
+
+            #save labels
+            rho.terms <- apply(grid, 1, function(pair){char <- paste(pair, collapse = "_")})
+            cov.lab <- c(colnames(covariate),rho.terms,paste("neighbors",colnames(covariate)))
+            outcome.lab <- c(colnames(data[,1:2]),colnames(covariate),
+                             paste("neighbors",colnames(data[,1:2])),
+                             paste("neighbors",colnames(covariate)))
+
+            colnames(alpha) <- cov.lab
+            colnames(beta) <- outcome.lab
+
+            outlist <- list(alpha,beta,accept_alpha,accept_beta,use_rho_all,group_lengths,group_functions, adjmat)
+            names(outlist) <- c("alpha", "beta", "accept_alpha", "accept_beta", "use_rho_all", "group_lengths", "group_functions", "adjmat")
+
+            return(outlist)
+
 
             # Name according to the chain
-            names(outoutlist) <- paste0("chain", as.character(1:length(outoutlist)))
-            class(outoutlist) <- append(class(outoutlist),"agcParamClass")
+            class(outlist) <- append(class(outlist),"agcParamClass")
             return(outoutlist)
           })
