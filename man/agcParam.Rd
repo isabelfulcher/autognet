@@ -7,11 +7,13 @@
 \title{Fit the covariate model for the Bayesian auto-g network computation.}
 \usage{
 agcParam(data, treatment, outcome, adjmat, B = 25000, R = 10,
-  seed = 1, scale.alpha = 0.005, scale.beta = 0.005)
+  seed = 1, scale.alpha = 0.005, scale.beta = 0.005,
+  prior.alpha = 1, prior.beta = 1)
 
 \S4method{agcParam}{data.frame,character,character}(data, treatment,
   outcome, adjmat, B = 25000, R = 10, seed = 1,
-  scale.alpha = 0.005, scale.beta = 0.005)
+  scale.alpha = 0.005, scale.beta = 0.005, prior.alpha = 1,
+  prior.beta = 1)
 }
 \arguments{
 \item{data}{A data.frame containing variables to be considered
@@ -49,6 +51,16 @@ parameters of the outcome model proposal distribution
 variance. By default, a scalar of .005 is applied to all values. If you
 wish to replace you can supply another scalar or the appropriate length
 vector.}
+
+\item{prior.alpha}{A binary (0/1) indicator for the proposal distribution
+for the covariate model parameters. If 1, the noninformative prior described in
+the paper will be used. If 0, an improper prior (i.e. proportional to 1) will
+be used. Default is 1.}
+
+\item{prior.beta}{A binary (0/1) indicator for the proposal distribution
+for the outcome model parameters. If 1, the noninformative prior described in
+the paper will be used. If 0, an improper prior (i.e. proportional to 1) will
+be used. Default is 1.}
 }
 \value{
 An S3 object of type \code{agcParamClass} that contains essential

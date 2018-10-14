@@ -50,11 +50,22 @@ NULL
 #' wish to replace you can supply another scalar or the appropriate length
 #' vector.
 #'
+#' @param prior.alpha A binary (0/1) indicator for the proposal distribution
+#' for the covariate model parameters. If 1, the noninformative prior described in
+#' the paper will be used. If 0, an improper prior (i.e. proportional to 1) will
+#' be used. Default is 1.
+#'
+#' @param prior.beta A binary (0/1) indicator for the proposal distribution
+#' for the outcome model parameters. If 1, the noninformative prior described in
+#' the paper will be used. If 0, an improper prior (i.e. proportional to 1) will
+#' be used. Default is 1.
+#'
 #' @return An S3 object of type \code{agcParamClass} that contains essential
 #' values for the covariate model.
 #'
 #' @importFrom stats plogis quantile rbinom rmultinom runif var
 #' @importFrom utils setTxtProgressBar txtProgressBar
+#' @importFrom mvtnorm dmvt
 #' @import methods
 #' @import Rcpp
 #'
@@ -76,15 +87,18 @@ NULL
 setGeneric(name = "agcParam",
            def = function(data, treatment, outcome, adjmat,
                           B = 25000, R = 10, seed = 1,
-                          scale.alpha=.005,scale.beta=.005)
+                          scale.alpha=.005,scale.beta=.005,
+                          prior.alpha=1,prior.beta=1)
 
              standardGeneric("agcParam"))
 
 #' @rdname agcParam
 setMethod("agcParam", signature("data.frame", "character", "character", "ANY",
-                                "ANY", "ANY", "ANY", "ANY", "ANY"),
+                                "ANY", "ANY", "ANY", "ANY", "ANY", "ANY"),
           definition = function(data, treatment, outcome, adjmat,
-                                B, R, seed,scale.alpha,scale.beta){
+                                B, R, seed,
+                                scale.alpha,scale.beta,
+                                prior.alpha,prior.beta){
 
             "%ni%" <- Negate("%in%")
 
@@ -95,6 +109,8 @@ setMethod("agcParam", signature("data.frame", "character", "character", "ANY",
             stopifnot(length(outcome) == 1)
             stopifnot(length(treatment) == 1)
             stopifnot(length(seed) == 1)
+            stopifnot(prior.alpha %in% c(0,1))
+            stopifnot(prior.beta %in% c(0,1))
 
             # Setup covariate dataframe
             covariate_data_frame <- data[ , !(names(data) %in% c(treatment, outcome))]
@@ -233,7 +249,7 @@ setMethod("agcParam", signature("data.frame", "character", "character", "ANY",
             # Last parameters needed for MCMC
             J <- dim(covariate)[2] # number of covariates
 
-            set.seed(seed)
+            #set.seed(seed) TO DO: Recomment in the future
 
             # Main loop for the MCMC
             pb <- txtProgressBar(min = 1, max = B, style = 3)
@@ -274,6 +290,15 @@ setMethod("agcParam", signature("data.frame", "character", "character", "ANY",
               h.aux.p <- alpha.p%*%sum.aux.p
               h.aux.c <- alpha[b,]%*%sum.aux.p
 
+              #priors
+              if(prior.alpha==1){
+                prior.p <- mvtnorm::dmvt(alpha.p,delta=rep(0,L),sigma=4*diag(L),df=3,log=TRUE)
+                prior.c <- mvtnorm::dmvt(alpha[b,],delta=rep(0,L),sigma=4*diag(L),df=3,log=TRUE)
+              } else {
+                prior.p <- 0
+                prior.c <- 0
+              }
+
               #independent units
               if(indepedents_present){
                 f.p.num <- alpha.p[1:(ncov+nrho)]%*%sum.l.indep
@@ -281,15 +306,9 @@ setMethod("agcParam", signature("data.frame", "character", "character", "ANY",
                 f.c.num <- alpha[b,1:(ncov+nrho)]%*%sum.l.indep
                 f.c.denom <- log(sum(v_get_sum(1:dim(l_grid)[1], l_grid, alpha[b,1:ncov], alpha[b,(ncov+1):(ncov+nrho)], ncov)))
 
-                #priors
-                prior.p <- mvtnorm::dmvt(alpha.p,delta=rep(0,L),sigma=4*diag(L),df=3,log=TRUE)
-                prior.c <- mvtnorm::dmvt(alpha[b,],delta=rep(0,L),sigma=4*diag(L),df=3,log=TRUE)
-
                 ratio <- (prior.p - prior.c + h.l1.p + h.aux.c - h.l1.c - h.aux.p +
                             f.p.num - n.indep*f.p.denom - f.c.num + n.indep*f.c.denom)
               } else {
-                prior.p <- mvtnorm::dmvt(alpha.p,delta=rep(0,L),sigma=4*diag(L),df=3,log=TRUE)
-                prior.c <- mvtnorm::dmvt(alpha[b,],delta=rep(0,L),sigma=4*diag(L),df=3,log=TRUE)
 
                 ratio <- (prior.p - prior.c + h.l1.p + h.aux.c - h.l1.c - h.aux.p)
               }
@@ -322,6 +341,15 @@ setMethod("agcParam", signature("data.frame", "character", "character", "ANY",
               h.aux.p <- beta.p%*%sum.aux.p
               h.aux.c <- beta[b,]%*%sum.aux.p
 
+              #prior
+              if(prior.beta==1){
+                prior.p.beta <- mvtnorm::dmvt(beta.p,delta=rep(0,P),sigma=4*diag(P),df=3,log=TRUE)
+                prior.c.beta <- mvtnorm::dmvt(alpha[b,],delta=rep(0,P),sigma=4*diag(P),df=3,log=TRUE)
+              } else {
+                prior.p.beta <- 0
+                prior.c.beta <- 0
+              }
+
               if(indepedents_present){
 
                 #independent units
@@ -331,16 +359,9 @@ setMethod("agcParam", signature("data.frame", "character", "character", "ANY",
                 f.c.num <- beta[b,1:(2+ncov)]%*%sum.y.indep
                 f.c.denom <- sum(log(1+exp(design.mat.indep%*%beta[b,1:(2+ncov)])))
 
-                #priors
-                prior.p <- mvtnorm::dmvt(beta.p,delta=rep(0,P),sigma=4*diag(P),df=3,log=TRUE)
-                prior.c <- mvtnorm::dmvt(beta[b,],delta=rep(0,P),sigma=4*diag(P),df=3,log=TRUE)
-
-                ratio <- (prior.p - prior.c + h.p + h.aux.c - h.c - h.aux.p + f.p.num - f.p.denom - f.c.num + f.c.denom)
+                ratio <- (prior.p.beta - prior.c.beta + h.p + h.aux.c - h.c - h.aux.p + f.p.num - f.p.denom - f.c.num + f.c.denom)
               } else {
-                prior.p <- mvtnorm::dmvt(beta.p,delta=rep(0,P),sigma=4*diag(P),df=3,log=TRUE)
-                prior.c <- mvtnorm::dmvt(beta[b,],delta=rep(0,P),sigma=4*diag(P),df=3,log=TRUE)
-
-                ratio <- (prior.p - prior.c + h.p + h.aux.c - h.c - h.aux.p)
+                ratio <- (prior.p.beta - prior.c.beta + h.p + h.aux.c - h.c - h.aux.p)
               }
               accept <- rbinom(1,1,min(1,exp(ratio)))
               if (accept == 1){beta[b+1,] <- beta.p} else { beta[b+1,] <- beta[b,] }
