@@ -249,7 +249,7 @@ setMethod("agcParam", signature("data.frame", "character", "character", "ANY",
             # Last parameters needed for MCMC
             J <- dim(covariate)[2] # number of covariates
 
-            #set.seed(seed) TO DO: Recomment in the future
+            set.seed(seed)
 
             # Main loop for the MCMC
             pb <- txtProgressBar(min = 1, max = B, style = 3)
