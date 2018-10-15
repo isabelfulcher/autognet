@@ -344,7 +344,7 @@ setMethod("agcParam", signature("data.frame", "character", "character", "ANY",
               #prior
               if(prior.beta==1){
                 prior.p.beta <- mvtnorm::dmvt(beta.p,delta=rep(0,P),sigma=4*diag(P),df=3,log=TRUE)
-                prior.c.beta <- mvtnorm::dmvt(alpha[b,],delta=rep(0,P),sigma=4*diag(P),df=3,log=TRUE)
+                prior.c.beta <- mvtnorm::dmvt(beta[b,],delta=rep(0,P),sigma=4*diag(P),df=3,log=TRUE)
               } else {
                 prior.p.beta <- 0
                 prior.c.beta <- 0
