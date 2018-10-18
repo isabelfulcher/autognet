@@ -238,11 +238,11 @@ IntegerVector auxVarOutcomeCpp (NumericVector beta, IntegerVector trt, arma::mat
 //' @export
 // [[Rcpp::export]]
 arma::field<arma::mat> networkGibbsOutCovCpp (NumericVector tau, NumericVector rho, NumericVector nu,
-                                               int ncov, int R, int N, NumericMatrix rho_mat,
-                                               List adjacency,  IntegerVector weights, arma::mat cov_mat,
-                                               IntegerVector group_lengths, IntegerVector group_functions){
+                                              int ncov, int R, int N, NumericMatrix rho_mat,
+                                              List adjacency,  IntegerVector weights, arma::mat cov_mat,
+                                              IntegerVector group_lengths, IntegerVector group_functions){
 
-  int J = ncov;
+  //int J = ncov;
   int number_of_groups = group_lengths.size();
   // Create a field class (aka list) with a pre-set amount of elements
   arma::field<arma::mat> listOfMatricesOut(R);
@@ -317,3 +317,113 @@ arma::field<arma::mat> networkGibbsOutCovCpp (NumericVector tau, NumericVector r
   return(listOfMatricesOut);
 
 }
+
+
+//' IF DOCUMENT
+//'
+//' Given the specific inputs, determine auxiliary outcome
+//' values using a Gibbs sampling procedure.
+//'
+//' @param IF DOCUMENT
+//'
+//' @export
+// [[Rcpp::export]]
+NumericVector networkGibbsOuts2Cpp (List cov_list, NumericVector beta, float p, int ncov,
+                                    int R, int N,  List adjacency, IntegerVector weights, IntegerVector subset,
+                                    float treatment_value, int burnin, int average){
+
+  int n = subset.size();
+  int J = ncov;
+  NumericVector output_subset(n, 1.0);
+
+  // Number of people
+  for (int ind = 0; ind < n; ++ind){
+    // Storage
+    NumericMatrix prob_outcome(R,N);
+    NumericMatrix outcome_all(R,N);
+
+    if(average == 1){
+      R = R + burnin;
+    }
+    int person = subset[ind];
+
+    // Starting values
+    IntegerVector outcome =  as<IntegerVector>(rbinom(N, 1, R::runif(0.1, 0.9)));
+    NumericVector a_bar =  as<NumericVector>(rbinom(N, 1, p));
+
+    // Number of iterations
+    for (int r = 0; r < R; ++r){
+      // Gibbs (conditional probabilities for each person
+      arma::mat cov_mat_all = cov_list[r];
+      arma::mat cov_mat = cov_mat_all.cols(0, ncov-1);
+      arma::mat cov_mat_n = cov_mat_all.cols(ncov,2*J-1);
+      int ncol = cov_mat.n_cols;
+
+      // Loop over each person
+      for (int i = 0; i < N; ++i){
+        a_bar[i] = rcpp_rbinom_one(p);
+        a_bar[person] = treatment_value;
+
+
+        // Generate Y given A, L
+        float weights_i = weights[i];
+        IntegerVector whichN = adjacency[i];
+
+        // Intercept term
+        float b0 = beta[0];
+
+        // Individual treatment term
+        float b1 = beta[1]*a_bar[i];
+
+        // Individual covariate terms
+        float b2 = 0;
+        for (int q = 2; q < 2 + ncol; ++q){
+          b2 = b2 + beta[q]*cov_mat(i,q-2);
+        }
+
+        // Neighbors outcome
+        NumericVector v_ss = as<NumericVector>(outcome[whichN]);
+        float nei_w = sum(v_ss/weights_i);
+        float b3 = beta[2+ncol]*nei_w;
+
+        // Neighbors treatment
+        NumericVector t_ss = as<NumericVector>(a_bar[whichN]);
+        float nei_w2 = sum(t_ss/weights_i);
+        float b4 = beta[3+ncol]*nei_w2;
+
+        // Neighbors covariates
+        float b5 = 0;
+        arma::uvec whichN_arma = adjacency[i];
+        for (int q = 4 + ncol; q < 4 + ncol + ncol; ++q){
+          int cov_idx = q-4-ncol;
+          arma::mat cov_vec = cov_mat.cols(cov_idx,cov_idx);
+          float nei_w_cov = sum(cov_vec.elem(whichN_arma)/weights_i);
+          b5 = b5 + beta[q]*nei_w_cov;
+        }
+
+        float prob_ri = R::plogis(b0 + b1 + b2 + b3 + b4 + b5 , 0, 1, 1, 0);
+        prob_outcome(r,i) = prob_ri;
+        outcome(i) = rcpp_rbinom_one(prob_ri);
+
+      }
+
+      if(average == 1){
+        for (int xx = 0; xx < N; ++xx){
+          outcome_all(r,xx) = outcome(xx);
+        }
+      }
+
+    }
+
+    if(average == 0){
+      output_subset[person] = prob_outcome(R, person);
+    } else {
+      NumericVector rowVec = outcome_all(_,person);
+      output_subset[person] = mean(rowVec[seq(burnin, R -1)]);
+    }
+
+  }
+  return(output_subset);
+}
+
+
