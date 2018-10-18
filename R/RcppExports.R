@@ -95,6 +95,18 @@ networkGibbsOutCovCpp <- function(tau, rho, nu, ncov, R, N, rho_mat, adjacency, 
 #' @param IF DOCUMENT
 #'
 #' @export
+networkGibbsOuts1Cpp <- function(cov_list, beta, p, ncov, R, N, adjacency, weights, burnin, average) {
+    .Call('_autognet_networkGibbsOuts1Cpp', PACKAGE = 'autognet', cov_list, beta, p, ncov, R, N, adjacency, weights, burnin, average)
+}
+
+#' IF DOCUMENT
+#'
+#' Given the specific inputs, determine auxiliary outcome
+#' values using a Gibbs sampling procedure.
+#'
+#' @param IF DOCUMENT
+#'
+#' @export
 networkGibbsOuts2Cpp <- function(cov_list, beta, p, ncov, R, N, adjacency, weights, subset, treatment_value, burnin, average) {
     .Call('_autognet_networkGibbsOuts2Cpp', PACKAGE = 'autognet', cov_list, beta, p, ncov, R, N, adjacency, weights, subset, treatment_value, burnin, average)
 }

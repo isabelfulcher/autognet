@@ -264,11 +264,11 @@ test_that("R and C++ versions give the same outcome model values", {
   expect_true(fc2 > 1)
 })
 
-aux.p.mat <-olist_cpp_2[[1]]
-aux.p.cov.n <- apply(aux.p.mat,2,function(x) {(adjmat%*%x)/weights})
-sum.aux.p <- c(unname(colSums(aux.p.mat)),
-               unname(colSums(aux.p.mat[,grid[,1]] * aux.p.mat[,grid[,2]]))*use_rho,
-               unname(colSums(aux.p.mat*aux.p.cov.n)))
+#aux.p.mat <- matrix(olist_cpp_2[[1]], ncol = 1)
+#aux.p.cov.n <- adjmat%*%aux.p.mat/weights
+#sum.aux.p <- c(unname(colSums(aux.p.mat)),
+#               unname(colSums(aux.p.mat[,grid[,1]] * aux.p.mat[,grid[,2]]))*use_rho,
+#               unname(colSums(aux.p.mat*aux.p.cov.n)))
 
 #Step 3. Calculate accept-reject ratio (everything is log-ed!)
 #interconnected units
@@ -342,7 +342,7 @@ set.seed(1)
 start_time <- Sys.time()
 lapply(1:nIt, function(i){
 autognet:::network.gibbs.cov(tau, rho, nu,
-                                           ncov, R, N, adjacency_r, weights,
+                                           ncov, R, N, burnin = 10, adjacency_r, weights,
                                            group_lengths, group_functions)
 
 }) -> olist_r_covlist
@@ -353,7 +353,7 @@ Rtime_cov <- end_time - start_time
 set.seed(1)
 start_time <- Sys.time()
 lapply(1:nIt, function(i){
-  networkGibbsOutcomeCpp(tau, rho, nu,
+  networkGibbsOutCovCpp(tau, rho, nu,
                          ncov, R, N, rho_mat,
                          adjacency, weights, cov.i,
                          group_lengths, group_functions)
