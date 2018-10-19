@@ -4,7 +4,7 @@
 \alias{networkGibbsOutCovCpp}
 \title{Run Gibbs sampler for network causal effects}
 \usage{
-networkGibbsOutCovCpp(tau, rho, nu, ncov, R, N, rho_mat, adjacency,
+networkGibbsOutCovCpp(tau, rho, nu, ncov, R, N, burnin, rho_mat, adjacency,
   weights, cov_mat, group_lengths, group_functions)
 }
 \arguments{

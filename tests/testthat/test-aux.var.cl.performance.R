@@ -336,13 +336,13 @@ beta.thin <- beta
 tau <- alpha.thin[b,1:ncov]
 rho <- alpha.thin[b,(ncov+1):(ncov+nrho)]
 nu  <- alpha.thin[b,(ncov+nrho+1):L]
-
+burnin <- 0
 ## MAKE COVARIATE ARRAY ##
 set.seed(1)
 start_time <- Sys.time()
 lapply(1:nIt, function(i){
 autognet:::network.gibbs.cov(tau, rho, nu,
-                                           ncov, R, N, burnin = 10, adjacency_r, weights,
+                                           ncov, R, N, burnin, adjacency_r, weights,
                                            group_lengths, group_functions)
 
 }) -> olist_r_covlist
@@ -354,7 +354,7 @@ set.seed(1)
 start_time <- Sys.time()
 lapply(1:nIt, function(i){
   networkGibbsOutCovCpp(tau, rho, nu,
-                         ncov, R, N, rho_mat,
+                         ncov, R, N, burnin, rho_mat,
                          adjacency, weights, cov.i,
                          group_lengths, group_functions)
 
@@ -371,15 +371,20 @@ test_that("C++ version is faster for causal estimates", {
   expect_true(fc > 1)
 })
 
-cov.list <- olist_cpp_covlist[[1]]
+# Pull out one cov.list for the causal effect bros
+cov.list <-  networkGibbsOutCovCpp(tau, rho, nu,
+                         ncov, R, N, burnin, rho_mat,
+                         adjacency, weights, cov.i,
+                         group_lengths, group_functions)
+
 
 ## NON-INDIVIDUAL GIBBS (overall effects) ##
-psi_gamma[b] <- autognet:::network.gibbs.out1(cov.list,beta.thin[b,],pr_trt,R,N,adjacency,weights)
+set.seed(1)
+r_out1 <- autognet:::network.gibbs.out1(cov.list,beta.thin[b,],pr_trt,R,N,adjacency,weights)
+set.seed(1)
+cpp_out1<- networkGibbsOuts1Cpp(cov.list,beta.thin[b,],pr_trt,ncov, R,N,adjacency,weights, 10, 1)
 
 ## INDIVIDUAL GIBBS (spillover and direct effects) ##
-psi_1_gamma[b] <- mean(sapply(1:N,autognet:::network.gibbs.out2,cov.list=cov.list,
-                              beta=beta.thin[b,],p=pr_trt,R=R,N=N,adjacency=adjacency,weights=weights,
-                              treatment_value=1))
-psi_0_gamma[b] <- mean(sapply(1:N,autognet:::network.gibbs.out2,cov.list=cov.list,
-                              beta=beta.thin[b,],p=pr_trt,R=R,N=N,adjacency=adjacency,weights=weights,
-                              treatment_value=0))
+
+
+

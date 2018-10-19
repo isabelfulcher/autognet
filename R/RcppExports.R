@@ -83,8 +83,8 @@ auxVarOutcomeCpp <- function(beta, trt, cov, N, R, adjacency, start, weights) {
 #'
 #'
 #' @export
-networkGibbsOutCovCpp <- function(tau, rho, nu, ncov, R, N, rho_mat, adjacency, weights, cov_mat, group_lengths, group_functions) {
-    .Call('_autognet_networkGibbsOutCovCpp', PACKAGE = 'autognet', tau, rho, nu, ncov, R, N, rho_mat, adjacency, weights, cov_mat, group_lengths, group_functions)
+networkGibbsOutCovCpp <- function(tau, rho, nu, ncov, R, N, burnin, rho_mat, adjacency, weights, cov_mat, group_lengths, group_functions) {
+    .Call('_autognet_networkGibbsOutCovCpp', PACKAGE = 'autognet', tau, rho, nu, ncov, R, N, burnin, rho_mat, adjacency, weights, cov_mat, group_lengths, group_functions)
 }
 
 #' IF DOCUMENT

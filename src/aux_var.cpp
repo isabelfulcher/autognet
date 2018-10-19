@@ -237,15 +237,17 @@ IntegerVector auxVarOutcomeCpp (NumericVector beta, IntegerVector trt, arma::mat
 //'
 //' @export
 // [[Rcpp::export]]
-arma::field<arma::mat> networkGibbsOutCovCpp (NumericVector tau, NumericVector rho, NumericVector nu,
-                                              int ncov, int R, int N, NumericMatrix rho_mat,
+arma::field<NumericMatrix> networkGibbsOutCovCpp (NumericVector tau, NumericVector rho, NumericVector nu,
+                                              int ncov, int R, int N, int burnin, NumericMatrix rho_mat,
                                               List adjacency,  IntegerVector weights, arma::mat cov_mat,
                                               IntegerVector group_lengths, IntegerVector group_functions){
 
   //int J = ncov;
   int number_of_groups = group_lengths.size();
   // Create a field class (aka list) with a pre-set amount of elements
-  arma::field<arma::mat> listOfMatricesOut(R);
+  arma::field<NumericMatrix> cov_save(R);
+  NumericMatrix cov_mat_save(N,2*ncov);
+  R = R + burnin;
 
   // Number of iterations
   for (int r = 0; r < R; ++r){
@@ -296,7 +298,6 @@ arma::field<arma::mat> networkGibbsOutCovCpp (NumericVector tau, NumericVector r
         } else if(group_function == 1){
 
           // Logistic / binary case
-
           arma::vec rowVec = rho_mat(_,j);
           arma::mat covVec = vectorise(cov_mat.rows(i,i));
           arma::uvec whichN = adjacency[i];
@@ -311,11 +312,35 @@ arma::field<arma::mat> networkGibbsOutCovCpp (NumericVector tau, NumericVector r
         j = j + group_length;
 
       }
-    }
-    listOfMatricesOut(r) = cov_mat;
-  }
-  return(listOfMatricesOut);
 
+      // Fill in covariate values for person i at current value in iteration r
+      // if if its after the burnin.
+      if(r >= burnin){
+
+        // Loop over twice of t
+        for(int xx = 0; xx < 2*ncov; ++xx){
+
+          // Individual's covariates
+          if(xx < ncov){
+            cov_mat_save(i,xx) = cov_mat(i,xx);
+
+            // Neighbors covariates
+          } else {
+            arma::uvec whichN = adjacency[i];
+            int xx_prime = xx - ncov;
+            arma::mat covAdjVec = cov_mat.cols(xx_prime,xx_prime);
+            float weights_i = weights[i];
+            float nei_w = sum(covAdjVec.elem(whichN)/weights_i);
+            cov_mat_save(i,xx) = nei_w;
+          }
+        }
+      }
+    }
+    if(r >= burnin){
+      cov_save(r-burnin) = cov_mat_save;
+    }
+  }
+  return(cov_save);
 }
 
 
@@ -389,9 +414,7 @@ NumericVector networkGibbsOuts1Cpp (List cov_list, NumericVector beta, float p, 
         arma::uvec whichN_arma = adjacency[i];
         for (int q = 4 + ncol; q < 4 + ncol + ncol; ++q){
           int cov_idx = q-4-ncol;
-          arma::mat cov_vec = cov_mat.cols(cov_idx,cov_idx);
-          float nei_w_cov = sum(cov_vec.elem(whichN_arma)/weights_i);
-          b5 = b5 + beta[q]*nei_w_cov;
+          b5 = b5 + beta[q]*cov_mat_n(i,cov_idx);
         }
 
         float prob_ri = R::plogis(b0 + b1 + b2 + b3 + b4 + b5 , 0, 1, 1, 0);
@@ -421,9 +444,7 @@ NumericVector networkGibbsOuts1Cpp (List cov_list, NumericVector beta, float p, 
         arma::uvec whichN_arma = adjacency[i];
         for (int q = 4 + ncol; q < 4 + ncol + ncol; ++q){
           int cov_idx = q-4-ncol;
-          arma::mat cov_vec = cov_mat_n.cols(cov_idx,cov_idx);
-          float nei_w_cov = sum(cov_vec.elem(whichN_arma)/weights_i);
-          b5 = b5 + beta[q]*nei_w_cov;
+          b5 = b5 + beta[q]*cov_mat_n(i,cov_idx);
         }
 
         float prob_ri = R::plogis(b0 + b2 + b3 +  b5 , 0, 1, 1, 0);
@@ -532,9 +553,7 @@ NumericVector networkGibbsOuts2Cpp (List cov_list, NumericVector beta, float p, 
         arma::uvec whichN_arma = adjacency[i];
         for (int q = 4 + ncol; q < 4 + ncol + ncol; ++q){
           int cov_idx = q-4-ncol;
-          arma::mat cov_vec = cov_mat_n.cols(cov_idx,cov_idx);
-          float nei_w_cov = sum(cov_vec.elem(whichN_arma)/weights_i);
-          b5 = b5 + beta[q]*nei_w_cov;
+          b5 = b5 + beta[q]*cov_mat_n(i,cov_idx);
         }
 
         float prob_ri = R::plogis(b0 + b1 + b2 + b3 + b4 + b5 , 0, 1, 1, 0);
