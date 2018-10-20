@@ -116,8 +116,10 @@ setMethod("agcEffect", signature("list", "ANY", "ANY", "ANY", "ANY", "ANY", "ANY
             }
 
             # Now evaluate each chain that results from the burnin and thin
-            sapply(indices, function(b){
-
+            pb <- txtProgressBar(min = 1, max = length(indices), style = 3)
+            mat <- matrix(NA, nrow = length(indices), ncol = 3)
+            for(idxx in 1:length(indices)){
+              b <- indices[idxx]
               tau <- alpha[b,1:ncov]
               rho <- alpha[b,(ncov+1):(ncov+nrho)]
               nu  <- alpha[b,(ncov+nrho+1):L]
@@ -158,10 +160,11 @@ setMethod("agcEffect", signature("list", "ANY", "ANY", "ANY", "ANY", "ANY", "ANY
                                                        treatment_value = 0,
                                                        burnin = burnin_R, average = as.numeric(average)))
 
-              c(psi_gamma, psi_1_gamma - psi_0_gamma, psi_0_gamma - psi_zero)
-            }) -> outout_mat
+              mat[idxx,] <- c(psi_gamma, psi_1_gamma - psi_0_gamma, psi_0_gamma - psi_zero)
+              setTxtProgressBar(pb, idxx)
+            }
 
-            output <- t(outout_mat)
+            output <- mat
             colnames(output) <- c("average", "direct", "spillover")
             return(output)
           })
