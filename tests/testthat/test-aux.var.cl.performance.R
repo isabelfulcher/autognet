@@ -341,9 +341,9 @@ burnin <- 0
 set.seed(1)
 start_time <- Sys.time()
 lapply(1:nIt, function(i){
-autognet:::network.gibbs.cov(tau, rho, nu,
-                                           ncov, R, N, burnin, adjacency_r, weights,
-                                           group_lengths, group_functions)
+  autognet:::network.gibbs.cov(tau, rho, nu,
+                               ncov, R, N, burnin, adjacency_r, weights,
+                               group_lengths, group_functions)
 
 }) -> olist_r_covlist
 end_time <- Sys.time()
@@ -354,9 +354,9 @@ set.seed(1)
 start_time <- Sys.time()
 lapply(1:nIt, function(i){
   networkGibbsOutCovCpp(tau, rho, nu,
-                         ncov, R, N, burnin, rho_mat,
-                         adjacency, weights, cov.i,
-                         group_lengths, group_functions)
+                        ncov, R, N, burnin, rho_mat,
+                        adjacency, weights, cov.i,
+                        group_lengths, group_functions)
 
 }) -> olist_cpp_covlist
 end_time <- Sys.time()
@@ -373,18 +373,73 @@ test_that("C++ version is faster for causal estimates", {
 
 # Pull out one cov.list for the causal effect bros
 cov.list <-  networkGibbsOutCovCpp(tau, rho, nu,
-                         ncov, R, N, burnin, rho_mat,
-                         adjacency, weights, cov.i,
-                         group_lengths, group_functions)
+                                   ncov, R, N, burnin, rho_mat,
+                                   adjacency, weights, cov.i,
+                                   group_lengths, group_functions)
+
+##########################
+# Test final Cpp functions
+##########################
 
 
 ## NON-INDIVIDUAL GIBBS (overall effects) ##
-set.seed(1)
-r_out1 <- autognet:::network.gibbs.out1(cov.list,beta.thin[b,],pr_trt,R,N,adjacency,weights)
-set.seed(1)
-cpp_out1<- networkGibbsOuts1Cpp(cov.list,beta.thin[b,],pr_trt,ncov, R,N,adjacency,weights, 10, 1)
+set.seed(5)
+start_time <- Sys.time()
+sapply(1:nIt, function(i){
+  mean(autognet:::network.gibbs.out1(cov.list,beta.thin[b,],pr_trt,ncov,
+                                     R,N,adjacency_r,weights, 0,average = 1))
 
-## INDIVIDUAL GIBBS (spillover and direct effects) ##
+}) -> olist_r_out1
+end_time <- Sys.time()
+r_time_out1 <- end_time - start_time
+
+set.seed(5)
+start_time <- Sys.time()
+sapply(1:nIt, function(i){
+  mean(networkGibbsOuts1Cpp(cov.list,beta.thin[b,],pr_trt,ncov, R,N,adjacency,weights, 0, 1))
+
+}) -> olist_cpp_out1
+end_time <- Sys.time()
+cpp_time_out1 <- end_time - start_time
+
+test_that("C++ version is faster for out1 function", {
+  expect_true(olist_r_out1[1] == olist_cpp_out1[1])
+  # Turns out that these won't be the same based on some Rmultinom internal workings
+  fc <- as.numeric(r_time_out1)/as.numeric(cpp_time_out1)
+  message(fc)
+  expect_true(fc > 1)
+})
 
 
+if(FALSE){
 
+set.seed(5)
+start_time <- Sys.time()
+sapply(1:nIt, function(i){
+  mean(autognet:::network.gibbs.out2(cov.list,beta.thin[b,],pr_trt,ncov,
+                                          R,N,adjacency_r, weights,
+                                          subset = 1:length(adjacency), treatment_value = 0.5, burnin = 0, average = 1))
+
+}) -> olist_r_out2
+end_time <- Sys.time()
+r_time_out2 <- end_time - start_time
+
+set.seed(5)
+start_time <- Sys.time()
+sapply(1:nIt, function(i){
+  mean(networkGibbsOuts2Cpp(cov.list,beta.thin[b,],pr_trt,ncov,
+                                   R,N,adjacency, weights,
+                                   subset = 1:length(adjacency), treatment_value = 0.5, burnin = 0, average = 1))
+
+}) -> olist_cpp_out2
+end_time <- Sys.time()
+cpp_time_out2 <- end_time - start_time
+
+test_that("C++ version is faster for out 2 function", {
+  expect_true(olist_r_out2[1] == olist_cpp_out2[1])
+  # Turns out that these won't be the same based on some Rmultinom internal workings
+  fc <- as.numeric(r_time_out2)/as.numeric(cpp_time_out2)
+  message(fc)
+  expect_true(fc > 1)
+})
+}

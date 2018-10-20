@@ -170,66 +170,20 @@ network.gibbs.cov <-  function(tau, rho, nu, ncov, R, N, burnin, adjacency, weig
 }
 
 #This is just the loop over individuals for some precified gamma
-network.gibbs.out1 <- function(cov.list,beta,p,
-                               R,N,adjacency,weights){
+network.gibbs.out1 <- function(cov.list,beta,p,ncov,
+                               R,N,adjacency,weights,burnin=0,average=0){
   # beta is a vector of length P
+  # average=0 takes the end probability of the chain, average=1 takes the mean of the last values (specify burnin!)
+  # burnin can be changed if average=1 (otherwise will not matter)
 
   J <- ncov #easier to use this notation
 
 
   #storage
-  prob_outcome_1 <- matrix(NA,R,N) #this is the E(Y_i(a_bar)), or psi
-
-  #starting values
-  outcome_1 <- rbinom(N,1,runif(1,.1,.9))
-  a_bar <- rbinom(N,1,p)
-
-  for (r in 1:R){
-    #Gibbs (conditional probabilities for each person)
-    cov_mat <- cov.list[[r]][,1:ncov] #OLD V: erase the second brackets
-    cov_mat_n <- cov.list[[r]][,(ncov+1):(2*J)] #OLD V: erase the second brackets
-
-    for (i in 1:N){
-    if (p != 0){
-      a_bar[i] <- rbinom(1,1,p)
-
-      #Generate Y given A,L
-      prob_outcome_1[r,i] <- plogis(beta[1] + # intercept term
-                                  beta[2]*a_bar[i] + # individual treatment term
-                                  beta[3:(2+J)]%*%cov_mat[i,] + # individual covariate term(s)
-                                  beta[(3+J)]*sum(outcome_1[adjacency[[i]]]/weights[i]) + # neighbor outcome
-                                  beta[(4+J)]*sum(a_bar[adjacency[[i]]]/weights[i]) + # neighbor treatment
-                                  sum(beta[(4+J+(1:J))]*cov_mat_n[i,])) # OLD V: erase this and uncomment below
-                                  #sum(beta[(4+J+(1:J))]*colSums(cov_mat[adjacency[[i]],(1:J), drop = FALSE]/weights[i]))) # neighbor covariate
-
-      outcome_1[i] <- rbinom(1,1,prob_outcome_1[r,i])
-    } else {
-      prob_outcome_1[r,i] <- plogis(beta[1] + # intercept term
-                                      beta[3:(2+J)]%*%cov_mat[i,] + # individual covariate term(s)
-                                      beta[(3+J)]*sum(outcome_1[adjacency[[i]]]/weights[i]) + # neighbor outcome
-                                      sum(beta[(4+J+(1:J))]*cov_mat_n[i,])) # OLD V: erase this and uncomment below
-                                      #sum(beta[(4+J+(1:J))]*colSums(cov_mat[adjacency[[i]],(1:J), drop = FALSE]/weights[i]))) # neighbor covariate
-
-      outcome_1[i] <- rbinom(1,1,prob_outcome_1[r,i])
-    }
-    }
-  }
-  output <- mean(prob_outcome_1[R,]) #could just output the end result for each person (then take mean outside)
-  return(output)
-}
-
-
-network.gibbs.out2 <- function(cov.list,beta,p,
-                               R,N,adjacency,weights,
-                               person,treatment_value){
-  # person is the index for the person whose covariate value is fixed
-  # treatment_value is the value that treatment should take (1 or 0)
-
-  J <- ncov #easier to use this notation
-
-
-  #storage
-  prob_outcome <- matrix(NA,R,N)
+  prob_outcome <- matrix(NA,R,N) #this is the E(Y_i(a_bar)), or psi
+  if (average==1) {
+    outcome_save <- matrix(NA,R,N)
+    R <- R + burnin}
 
   #starting values
   outcome <- rbinom(N,1,runif(1,.1,.9))
@@ -238,25 +192,99 @@ network.gibbs.out2 <- function(cov.list,beta,p,
   for (r in 1:R){
     #Gibbs (conditional probabilities for each person)
     cov_mat <- cov.list[[r]][,1:ncov] #OLD V: erase the second brackets
-    cov_mat_n <- cov.list[[r]][,(ncov+1):(2*J)]#OLD V: erase the second brackets
+    cov_mat_n <- cov.list[[r]][,(ncov+1):(2*J)] #OLD V: erase the second brackets
 
     for (i in 1:N){
-        a_bar[i] <- rbinom(1,1,p)
-        a_bar[person] <- treatment_value
+    if (p != 0){ #CL: I am only doing as an if statement because I thought it may make these faster if I just zero'd out the terms for zero
+      a_bar[i] <- rbinom(1,1,p)
 
-        #Generate Y given A,L
-        prob_outcome[r,i] <- plogis(beta[1] + # intercept term
-                                        beta[2]*a_bar[i] + # individual treatment term
-                                        beta[3:(2+J)]%*%cov_mat[i,] + # individual covariate term(s)
-                                        beta[(3+J)]*sum(outcome[adjacency[[i]]]/weights[i]) + # neighbor outcome
-                                        beta[(4+J)]*sum(a_bar[adjacency[[i]]]/weights[i]) + # neighbor treatment
-                                        sum(beta[(4+J+(1:J))]*cov_mat_n[i,])) # OLD V: erase this and uncomment below
-                                        #sum(beta[(4+J+(1:J))]*colSums(cov_mat[adjacency[[i]],(1:J), drop = FALSE]/weights[i]))) # neighbor covariate
+      #Generate Y given A,L
+      prob_outcome[r,i] <- plogis(beta[1] + # intercept term
+                                  beta[2]*a_bar[i] + # individual treatment term
+                                  beta[3:(2+J)]%*%cov_mat[i,] + # individual covariate term(s)
+                                  beta[(3+J)]*sum(outcome[adjacency[[i]]]/weights[i]) + # neighbor outcome
+                                  beta[(4+J)]*sum(a_bar[adjacency[[i]]]/weights[i]) + # neighbor treatment
+                                  sum(beta[(4+J+(1:J))]*cov_mat_n[i,]))
 
-        outcome[i] <- rbinom(1,1,prob_outcome[r,i])
+      outcome[i] <- rbinom(1,1,prob_outcome[r,i])
+    } else {
+      prob_outcome[r,i] <- plogis(beta[1] + # intercept term
+                                      beta[3:(2+J)]%*%cov_mat[i,] + # individual covariate term(s)
+                                      beta[(3+J)]*sum(outcome_1[adjacency[[i]]]/weights[i]) + # neighbor outcome
+                                      sum(beta[(4+J+(1:J))]*cov_mat_n[i,]))
+
+      outcome[i] <- rbinom(1,1,prob_outcome[r,i])
     }
+    }
+    if (average==1) {outcome_save[r,] <- outcome}
   }
-  output <- prob_outcome[R,person]
-  return(output)
+  #saving values for person
+  if (average == 0){
+    output <- prob_outcome[R,]
+  } else {
+    output <- apply(outcome_save[(burnin+1):R,],2,mean)
+  }
+
+  return(output) #will output final values for all N persons (then ppl can take their own subset)
 }
 
+
+network.gibbs.out2 <- function(cov.list,beta,p,ncov,
+                               R,N,adjacency,weights,
+                               subset,treatment_value,burnin=0,average=0){
+  # subset contains all person we want average of effects over (USER SPECIFIED!!)
+  # subset needs to be the index corresponding to persons 1 to N as they appear in the adjacency matrix
+  # treatment_value is the value that treatment should take (1 or 0)
+  # average=0 takes the end probability of the chain, average=1 takes the mean of the last values (specify burnin!)
+  # burnin can be changed if average=1 (otherwise will not matter)
+
+  n <- length(subset)
+  J <- ncov #easier to use this notation
+  output_subset <-  vector(mode="numeric", length=n)
+
+  for (ind in 1:n){
+
+    #storage
+    prob_outcome <- matrix(NA,R,N)
+    if (average==1) {
+      outcome_all <- matrix(NA,R,N)
+      R <- R + burnin}
+    person <- subset[ind]
+
+    #starting values
+    outcome <- rbinom(N,1,runif(1,.1,.9))
+    a_bar <- rbinom(N,1,p)
+
+    for (r in 1:R){
+      #Gibbs (conditional probabilities for each person)
+      cov_mat <- cov.list[[r]][,1:ncov] # find corresponding value of covariates
+      cov_mat_n <- cov.list[[r]][,(ncov+1):(2*J)] # find corresponding value of covariates
+
+      for (i in 1:N){
+          a_bar[i] <- rbinom(1,1,p)
+          a_bar[person] <- treatment_value
+
+          #Generate Y given A,L
+          prob_outcome[r,i] <- plogis(beta[1] + # intercept term
+                                          beta[2]*a_bar[i] + # individual treatment term
+                                          beta[3:(2+J)]%*%cov_mat[i,] + # individual covariate term(s)
+                                          beta[(3+J)]*sum(outcome[adjacency[[i]]]/weights[i]) + # neighbor outcome
+                                          beta[(4+J)]*sum(a_bar[adjacency[[i]]]/weights[i]) + # neighbor treatment
+                                          sum(beta[(4+J+(1:J))]*cov_mat_n[i,]))
+
+          outcome[i] <- rbinom(1,1,prob_outcome[r,i])
+      }
+
+      if (average == 1) {outcome_all[r,] <- outcome}
+    }
+
+    #saving values for person within the subset
+    if (average == 0){
+      output_subset[person] <- prob_outcome[R,person]
+    } else {
+      output_subset[person] <- mean(outcome_all[(burnin+1):R,person])
+    }
+
+  }
+  return(output_subset) #will output all values for specified subset
+}

@@ -238,9 +238,9 @@ IntegerVector auxVarOutcomeCpp (NumericVector beta, IntegerVector trt, arma::mat
 //' @export
 // [[Rcpp::export]]
 arma::field<NumericMatrix> networkGibbsOutCovCpp (NumericVector tau, NumericVector rho, NumericVector nu,
-                                              int ncov, int R, int N, int burnin, NumericMatrix rho_mat,
-                                              List adjacency,  IntegerVector weights, arma::mat cov_mat,
-                                              IntegerVector group_lengths, IntegerVector group_functions){
+                                                  int ncov, int R, int N, int burnin, NumericMatrix rho_mat,
+                                                  List adjacency,  IntegerVector weights, arma::mat cov_mat,
+                                                  IntegerVector group_lengths, IntegerVector group_functions){
 
   //int J = ncov;
   int number_of_groups = group_lengths.size();
@@ -502,7 +502,7 @@ NumericVector networkGibbsOuts2Cpp (List cov_list, NumericVector beta, float p, 
     if(average == 1){
       R = R + burnin;
     }
-    int person = subset[ind];
+    int person = subset[ind] - 1; // minus 1 for Cpp
 
     // Starting values
     IntegerVector outcome =  as<IntegerVector>(rbinom(N, 1, R::runif(0.1, 0.9)));
