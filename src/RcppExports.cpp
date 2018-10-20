@@ -80,7 +80,7 @@ BEGIN_RCPP
 END_RCPP
 }
 // networkGibbsOutCovCpp
-arma::field<NumericMatrix> networkGibbsOutCovCpp(NumericVector tau, NumericVector rho, NumericVector nu, int ncov, int R, int N, int burnin, NumericMatrix rho_mat, List adjacency, IntegerVector weights, arma::mat cov_mat, IntegerVector group_lengths, IntegerVector group_functions);
+List networkGibbsOutCovCpp(NumericVector tau, NumericVector rho, NumericVector nu, int ncov, int R, int N, int burnin, NumericMatrix rho_mat, List adjacency, IntegerVector weights, arma::mat cov_mat, IntegerVector group_lengths, IntegerVector group_functions);
 RcppExport SEXP _autognet_networkGibbsOutCovCpp(SEXP tauSEXP, SEXP rhoSEXP, SEXP nuSEXP, SEXP ncovSEXP, SEXP RSEXP, SEXP NSEXP, SEXP burninSEXP, SEXP rho_matSEXP, SEXP adjacencySEXP, SEXP weightsSEXP, SEXP cov_matSEXP, SEXP group_lengthsSEXP, SEXP group_functionsSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;

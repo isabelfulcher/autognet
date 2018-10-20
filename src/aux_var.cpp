@@ -237,15 +237,15 @@ IntegerVector auxVarOutcomeCpp (NumericVector beta, IntegerVector trt, arma::mat
 //'
 //' @export
 // [[Rcpp::export]]
-arma::field<NumericMatrix> networkGibbsOutCovCpp (NumericVector tau, NumericVector rho, NumericVector nu,
-                                                  int ncov, int R, int N, int burnin, NumericMatrix rho_mat,
-                                                  List adjacency,  IntegerVector weights, arma::mat cov_mat,
-                                                  IntegerVector group_lengths, IntegerVector group_functions){
+List networkGibbsOutCovCpp (NumericVector tau, NumericVector rho, NumericVector nu,
+                            int ncov, int R, int N, int burnin, NumericMatrix rho_mat,
+                            List adjacency,  IntegerVector weights, arma::mat cov_mat,
+                            IntegerVector group_lengths, IntegerVector group_functions){
 
   //int J = ncov;
   int number_of_groups = group_lengths.size();
   // Create a field class (aka list) with a pre-set amount of elements
-  arma::field<NumericMatrix> cov_save(R);
+  List cov_save(R);
   NumericMatrix cov_mat_save(N,2*ncov);
   R = R + burnin;
 
@@ -336,8 +336,12 @@ arma::field<NumericMatrix> networkGibbsOutCovCpp (NumericVector tau, NumericVect
         }
       }
     }
+
+    // After all people, put cov_mat_save into the list that will be returned
     if(r >= burnin){
-      cov_save(r-burnin) = cov_mat_save;
+      List cov_init = Rcpp::clone(cov_save);
+      cov_init[r-burnin] = cov_mat_save;
+      cov_save = cov_init;
     }
   }
   return(cov_save);
@@ -362,9 +366,6 @@ NumericVector networkGibbsOuts1Cpp (List cov_list, NumericVector beta, float p, 
   NumericMatrix prob_outcome(R,N);
   NumericMatrix outcome_save(R,N); // only used if average == 1
 
-  if(average == 1){
-    R = R + burnin;
-  }
 
   // Starting values
   IntegerVector outcome =  as<IntegerVector>(rbinom(N, 1, R::runif(0.1, 0.9)));
@@ -485,8 +486,9 @@ NumericVector networkGibbsOuts1Cpp (List cov_list, NumericVector beta, float p, 
 //'
 //' @export
 // [[Rcpp::export]]
-NumericVector networkGibbsOuts2Cpp (List cov_list, NumericVector beta, float p, int ncov,
-                                    int R, int N,  List adjacency, IntegerVector weights, IntegerVector subset,
+NumericVector networkGibbsOuts2Cpp (List cov_list, NumericVector beta, float p,
+                                    int ncov, int R, int N,
+                                    List adjacency, IntegerVector weights, IntegerVector subset,
                                     float treatment_value, int burnin, int average){
 
   int n = subset.size();
@@ -499,9 +501,6 @@ NumericVector networkGibbsOuts2Cpp (List cov_list, NumericVector beta, float p, 
     NumericMatrix prob_outcome(R,N);
     NumericMatrix outcome_all(R,N);
 
-    if(average == 1){
-      R = R + burnin;
-    }
     int person = subset[ind] - 1; // minus 1 for Cpp
 
     // Starting values
@@ -520,7 +519,6 @@ NumericVector networkGibbsOuts2Cpp (List cov_list, NumericVector beta, float p, 
       for (int i = 0; i < N; ++i){
         a_bar[i] = rcpp_rbinom_one(p);
         a_bar[person] = treatment_value;
-
 
         // Generate Y given A, L
         float weights_i = weights[i];
@@ -574,9 +572,17 @@ NumericVector networkGibbsOuts2Cpp (List cov_list, NumericVector beta, float p, 
       output_subset[person] = prob_outcome(R, person);
     } else {
       NumericVector rowVec = outcome_all(_,person);
-      output_subset[person] = mean(rowVec[seq(burnin, R -1)]);
+      // ghetto mean
+      float total = 0;
+      float number = 0;
+      for(int xx = 0; xx < R; ++xx){
+        if(xx >= burnin){
+          total = total + rowVec[xx];
+          number = number + 1;
+        }
+      }
+      output_subset[person] = total/number;
     }
-
   }
   return(output_subset);
 }

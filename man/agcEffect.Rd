@@ -7,10 +7,12 @@
 \title{Evaluate the out model for the Bayesian auto-g network computation.}
 \usage{
 agcEffect(mod, burnin = 1, thin = 0.5, treatment_allocation = 0.5,
-  R = 10, seed = 1)
+  subset = 0, R = 10, burnin_R = 10, burnin_cov = 10,
+  average = TRUE, index_override = 0)
 
 \S4method{agcEffect}{list}(mod, burnin = 1, thin = 0.2,
-  treatment_allocation = 0.5, R = 10, seed = 1)
+  treatment_allocation = 0.5, subset = 0, R = 10, burnin_R = 10,
+  burnin_cov = 10, average = TRUE, index_override = 0)
 }
 \arguments{
 \item{mod}{An \code{agcParamClass} object from \code{agcParam}
@@ -27,11 +29,20 @@ not thin at all).}
 in the network to receive the treatment. Should be a number between
 0 and 1. Default = 0.5.}
 
+\item{subset}{IF DOCUMENT; default 0 -> everyone}
+
 \item{R}{The number of iterations for the Gibbs inner loop.
 Default = 10.}
 
-\item{seed}{An integer value for \code{set.seed}.
-This will be applied uniformly to all chains. Default = 1.}
+\item{burnin_R}{IF DOCUMENT
+Default = 10.}
+
+\item{burnin_cov}{IF DOCUMENT
+Default = 10.}
+
+\item{average}{IF DOCUMENT}
+
+\item{index_override}{IF DOCUMENT}
 }
 \value{
 An S3 object of type \code{agcEffectClass} that contains essential
@@ -56,7 +67,7 @@ seed = 1
 
 mod <- agcParam(data, treatment, outcome, adjmat,
                          B = B, R = R, seed = c(1))
-effects <- agcEffect(mod, burnin = 1, thin = 0.5, treatment_allocation = 0.5, R = 10, seed = 1)
+effects <- agcEffect(mod)
 
 
 }

@@ -23,11 +23,20 @@ NULL
 #' in the network to receive the treatment. Should be a number between
 #' 0 and 1. Default = 0.5.
 #'
+#' @param subset IF DOCUMENT; default 0 -> everyone
+#'
 #' @param R The number of iterations for the Gibbs inner loop.
 #' Default = 10.
 #'
-#' @param seed An integer value for \code{set.seed}.
-#' This will be applied uniformly to all chains. Default = 1.
+#' @param burnin_R IF DOCUMENT
+#' Default = 10.
+#'
+#' @param burnin_cov  IF DOCUMENT
+#' Default = 10.
+#'
+#' @param average IF DOCUMENT
+#'
+#' @param index_override IF DOCUMENT
 #'
 #' @return An S3 object of type \code{agcEffectClass} that contains essential
 #' values for the outcome model.
@@ -46,17 +55,19 @@ NULL
 #'
 #' mod <- agcParam(data, treatment, outcome, adjmat,
 #'                          B = B, R = R, seed = c(1))
-#' effects <- agcEffect(mod, burnin = 1, thin = 0.5, treatment_allocation = 0.5, R = 10, seed = 1)
+#' effects <- agcEffect(mod)
 #'
 #'
 #' @export
 setGeneric(name = "agcEffect",
-           def = function(mod, burnin = 1, thin = 0.5, treatment_allocation = 0.5, R = 10, seed = 1)
+           def = function(mod, burnin = 1, thin = 0.5, treatment_allocation = 0.5, subset = 0,
+                          R = 10, burnin_R = 10, burnin_cov = 10, average = TRUE, index_override = 0)
              standardGeneric("agcEffect"))
 
 #' @rdname agcEffect
-setMethod("agcEffect", signature("list", "ANY", "ANY", "ANY", "ANY", "ANY"),
-          definition = function(mod, burnin = 1, thin = 0.2, treatment_allocation = 0.5, R = 10, seed = 1){
+setMethod("agcEffect", signature("list", "ANY", "ANY", "ANY", "ANY", "ANY", "ANY", "ANY", "ANY", "ANY"),
+          definition = function(mod, burnin = 1, thin = 0.2, treatment_allocation = 0.5, subset = 0,
+                                R = 10, burnin_R = 10, burnin_cov = 10, average = TRUE, index_override = 0){
 
             stopifnot(treatment_allocation > 0 & treatment_allocation < 1)
             stopifnot(thin> 0 & thin <= 1)
@@ -64,59 +75,93 @@ setMethod("agcEffect", signature("list", "ANY", "ANY", "ANY", "ANY", "ANY"),
             stopifnot(R >= 1)
 
             # Determine which indices to actually compute
-            total <- dim(mod[[1]][[1]])[1]
+            total <- dim(mod[[1]])[1]
             indices <- seq(from = 1 + burnin, to = total, by = round(1/thin))
+
+            # Manually establish the indices that will be evaluted in the loop
+            if(index_override != 0){
+              indices <- index_override
+            }
 
             if(length(indices) < 1){
               stop("Change burnin and thin values -- no valid indices will currently be computed")
             }
 
-            # Now evaluate the model evaluating each chain in parallel
-            out_names <- names(mod)
-            mclapply(out_names, function(chain_name){
+            # Define parameters from the covariate model
+            alpha <- mod[[1]]
+            beta <- mod[[2]]
+            group_lengths <- mod[[6]]
+            group_functions <- mod[[7]]
+            adjmat <- mod[[8]]
+            weights <- apply(adjmat,1,sum)
 
-              # Define parameters from the covariate model
-              alpha <- mod[[chain_name]][[1]]
-              beta <- mod[[chain_name]][[2]]
-              group_lengths <- mod[[chain_name]][[6]]
-              group_functions <- mod[[chain_name]][[7]]
-              adjmat <- mod[[chain_name]][[8]]
-              weights <- apply(adjmat,1,sum)
+            # Define some other parameters using IF's logic
+            ncov <- (ncol(beta)-4)/2
+            nrho <- choose(ncov,2)
+            L <- ncov*2 + nrho
+            N <- nrow(adjmat)
 
-              # Define some other parameters using IF's logic
-              ncov <- (ncol(beta)-4)/2 #this should just flow from 04a R script
-              nrho <- choose(ncov,2) #ibid
-              L <- ncov*2 + nrho #ibid
+            # Establish a C++-friendly adjacency list
+            adjacency <- list(NA)
+            for (i in 1:N){
+              adjacency[[i]] <- unname(which(adjmat[i,]==1)) - 1 # the -1 is for zero indexing in Cpp
+            }
 
-              estimates <- matrix(NA,total,3)
+            # Figure out the subset logic
+            # WE ALREADY DO THE ZERO-based indexing in C++ DON'T DO IT AGAIN HERE
+            if(subset == 0){
+              subset <- 1:N
+            } else {
+              subset <- subset
+            }
 
-              # Set up the R adj. list
-              N <- nrow(adjmat)
-              adjacency <- list(NA)
-              for (i in 1:N){
-                adjacency[[i]] <- which(adjmat[i,]==1)
-              }
+            # Now evaluate each chain that results from the burnin and thin
+            sapply(indices, function(b){
 
-              # Loop over only value nominated
-              for (b in indices){
-
-                tau <- alpha[b+1,1:ncov]
-                rho <- alpha[b+1,(ncov+1):(ncov+nrho)]
-                nu  <- alpha[b+1,(ncov+nrho+1):L]
-
-                ## CAUSAL EFFECT ##
-                estimates[b,] <- network.gibbs3.cl(tau, rho, nu, beta[b+1,],
-                                                   ncov, R, N, treatment_allocation, adjacency, weights,
-                                                   group_lengths, group_functions)
-
-              }
-              estimates
-            }) -> outoutlist
+              tau <- alpha[b,1:ncov]
+              rho <- alpha[b,(ncov+1):(ncov+nrho)]
+              nu  <- alpha[b,(ncov+nrho+1):L]
+              rho_mat <- matrix(0, nrow = ncov, ncol = ncov)
+              rho_mat[lower.tri(rho_mat, diag=FALSE)] <- rho; rho_mat <- rho_mat + t(rho_mat)
 
 
-            # Prepare the return values
-            names(outoutlist) <- out_names
+              # Make starting values
+              cov_mat <- matrix(rbinom(ncov*N, 1, 0.5), ncol = ncov, nrow = N )
 
-            class(outoutlist) <- append(class(outoutlist),"agcEffectClass")
-            return(outoutlist)
+
+              ## MAKE COVARIATE ARRAY ##
+              cov.list <- networkGibbsOutCovCpp(tau, rho, nu,
+                                                ncov, R + burnin_R, N, burnin_cov, rho_mat,
+                                                adjacency, weights, cov_mat,
+                                                group_lengths, group_functions)
+
+              ## NON-INDIVIDUAL GIBBS (overall effects) ##
+              psi_gamma <-mean(networkGibbsOuts1Cpp(cov_list = cov.list, beta = beta[b,], p = treatment_allocation,
+                                                    ncov = ncov, R= R + burnin_R, N = N,  # have to do R + burnin for weird C++ error
+                                                    adjacency = adjacency, weights = weights,
+                                                    burnin = burnin_R, average = as.numeric(average)))
+
+              psi_zero <-mean(networkGibbsOuts1Cpp(cov_list = cov.list, beta = beta[b,], p = 0,
+                                                   ncov = ncov, R = R + burnin_R, N = N,
+                                                   adjacency = adjacency, weights = weights,
+                                                   burnin = burnin_R, average = as.numeric(average)))
+
+              psi_1_gamma <- mean(networkGibbsOuts2Cpp(cov_list = cov.list, beta = beta[b,], p = treatment_allocation,
+                                                       ncov = ncov, R = R + burnin_R, N = N,   # have to do R + burnin for weird C++ error
+                                                       adjacency = adjacency, weights = weights, subset = subset,
+                                                       treatment_value = 1.0,
+                                                       burnin = burnin_R, average = as.numeric(average)))
+
+              psi_0_gamma <- mean(networkGibbsOuts2Cpp(cov_list = cov.list, beta = beta[b,], p = treatment_allocation,
+                                                       ncov = ncov, R = R + burnin_R, N = N,   # have to do R + burnin for weird C++ error
+                                                       adjacency = adjacency, weights = weights, subset = subset,
+                                                       treatment_value = 0,
+                                                       burnin = burnin_R, average = as.numeric(average)))
+
+              c(psi_gamma, psi_1_gamma - psi_0_gamma, psi_0_gamma - psi_zero)
+            }) -> outout_mat
+
+            output <- t(outout_mat)
+            colnames(output) <- c("average", "direct", "spillover")
+            return(output)
           })

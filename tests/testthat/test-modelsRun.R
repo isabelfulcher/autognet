@@ -24,11 +24,10 @@ test_that("Supplying multiple values in the seed vector yields multiple chains",
 context("Verify autog computation works for outcome model")
 mod <- agcParam(data, treatment, outcome, adjmat,
                 B = 100, R = R, seed = c(1))
-#effects <-  agcEffect(mod, burnin = 1, thin = 0.2, treatment_allocation = 0.5, R = 10, seed = 1)
+effects <-  agcEffect(mod)
 
-#test_that("Outcome model did something", {
+test_that("Outcome model did something", {
 
-#  expect_true(sum(!is.na(effects[["chain1"]])) == 60)
-#  expect_true(sum(!is.na(effects[["chain2"]])) == 60)
+  expect_true(sum(abs(effects)) > 0)
 
-#})
+})

@@ -349,7 +349,6 @@ lapply(1:nIt, function(i){
 end_time <- Sys.time()
 Rtime_cov <- end_time - start_time
 
-
 set.seed(1)
 start_time <- Sys.time()
 lapply(1:nIt, function(i){
@@ -411,14 +410,13 @@ test_that("C++ version is faster for out1 function", {
 })
 
 
-if(FALSE){
 
 set.seed(5)
 start_time <- Sys.time()
 sapply(1:nIt, function(i){
   mean(autognet:::network.gibbs.out2(cov.list,beta.thin[b,],pr_trt,ncov,
-                                          R,N,adjacency_r, weights,
-                                          subset = 1:length(adjacency), treatment_value = 0.5, burnin = 0, average = 1))
+                                     R,N,adjacency_r, weights,
+                                     subset = 1:length(adjacency), treatment_value = 0.5, burnin = 0, average = 1))
 
 }) -> olist_r_out2
 end_time <- Sys.time()
@@ -428,18 +426,35 @@ set.seed(5)
 start_time <- Sys.time()
 sapply(1:nIt, function(i){
   mean(networkGibbsOuts2Cpp(cov.list,beta.thin[b,],pr_trt,ncov,
-                                   R,N,adjacency, weights,
-                                   subset = 1:length(adjacency), treatment_value = 0.5, burnin = 0, average = 1))
+                            R,N,adjacency, weights,
+                            subset = 1:length(adjacency), treatment_value = 0.5, burnin = 0, average = 1))
 
 }) -> olist_cpp_out2
 end_time <- Sys.time()
 cpp_time_out2 <- end_time - start_time
 
 test_that("C++ version is faster for out 2 function", {
-  expect_true(olist_r_out2[1] == olist_cpp_out2[1])
+  expect_true(round(olist_r_out2[1], 5) == round(olist_cpp_out2[1],5))
   # Turns out that these won't be the same based on some Rmultinom internal workings
   fc <- as.numeric(r_time_out2)/as.numeric(cpp_time_out2)
   message(fc)
   expect_true(fc > 1)
 })
+
+# Quickstart
+if(FALSE){
+  rdsIn <- readRDS(paste0(system.file('extdata',package='autognet'),"/agc-example.rds"))
+  adjmat <- rdsIn[[1]]
+  data <- rdsIn[[2]]
+  treatment <- "treatment"
+  outcome <- "outcome"
+  B = 10
+  R = 5
+  seed = 1
+
+  mod <- agcParam(data, treatment, outcome, adjmat,
+                  B = B, R = R, seed = c(1))
+  burnin = 1; thin = 0.2; treatment_allocation = 0.5; subset = 0;
+  R = 10; burnin_R = 10; burnin_cov = 10; average = TRUE; index_override = 0
+  b <- 1
 }
