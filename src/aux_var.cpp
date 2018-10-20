@@ -466,7 +466,7 @@ NumericVector networkGibbsOuts1Cpp (List cov_list, NumericVector beta, float p, 
   // Saving values for person
   NumericVector output =  as<NumericVector>(rbinom(N, 1, p));
   if(average == 0){
-    output = prob_outcome(R, _);
+    output = prob_outcome(R-1, _);
   } else {
     for( int xx = 0; xx < N; ++xx){
       NumericVector rowVec = outcome_save(_,xx);
@@ -569,7 +569,7 @@ NumericVector networkGibbsOuts2Cpp (List cov_list, NumericVector beta, float p,
     }
 
     if(average == 0){
-      output_subset[person] = prob_outcome(R, person);
+      output_subset[person] = prob_outcome(R-1, person);
     } else {
       NumericVector rowVec = outcome_all(_,person);
       // ghetto mean
