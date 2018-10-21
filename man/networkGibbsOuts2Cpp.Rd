@@ -2,15 +2,45 @@
 % Please edit documentation in R/RcppExports.R
 \name{networkGibbsOuts2Cpp}
 \alias{networkGibbsOuts2Cpp}
-\title{IF DOCUMENT}
+\title{Estimate components for direct and spillover effects}
 \usage{
 networkGibbsOuts2Cpp(cov_list, beta, p, ncov, R, N, adjacency, weights,
   subset, treatment_value, burnin, average)
 }
 \arguments{
-\item{IF}{DOCUMENT}
+\item{cov_list}{The output from networkGibbsOutCovCpp function}
+
+\item{beta}{A numeric vector for the parameters from the outcome model}
+
+\item{p}{A probability of treated units for the binomial treatment assignment draw}
+
+\item{ncov}{A numeric vector for the parameters from the outcome model}
+
+\item{R}{An integer indicating the number of iterations for the Gibbs}
+
+\item{N}{An integer indicating the size of the interconnected network}
+
+\item{adjacency}{A binary matrix indicating connected units}
+
+\item{weights}{A numeric vector indicating the number of neighbors for each node}
+
+\item{subset}{The indices of the individuals, as they appear in the adjacency matrix,
+to be included in the network causal effects estimates.}
+
+\item{treatment_value}{The intervened value of an individual's treatment assignment
+for each person in subset}
+
+\item{burnin}{The index to start evaluation as one would normally have for a burnin
+for a Bayesian computation.}
+
+\item{average}{An indicator of whether to evaluate the causal effects as an average
+of the R iterations}
+}
+\value{
+A vector of length N containing the estimated value of psi for each person
 }
 \description{
-Given the specific inputs, determine auxiliary outcome
-values using a Gibbs sampling procedure.
+Given the specific inputs, determine estimates of psi for the given
+units under some treatment regime and individual treatment value
+using a Gibbs sampling procedure.
 }

@@ -61,9 +61,9 @@ auxVarOutcomeCpp <- function(beta, trt, cov, N, R, adjacency, start, weights) {
     .Call('_autognet_auxVarOutcomeCpp', PACKAGE = 'autognet', beta, trt, cov, N, R, adjacency, start, weights)
 }
 
-#' Run Gibbs sampler for network causal effects
+#' Run Gibbs sampler for covariates to use in network causal effect estimation
 #'
-#' Given the specific inputs, determine auxiliary covariate
+#' Given the specific inputs, determine covariate
 #' values using a Gibbs sampling procedure.
 #'
 #' @param tau A numeric vector for the intercept terms in the covariate model
@@ -72,14 +72,15 @@ auxVarOutcomeCpp <- function(beta, trt, cov, N, R, adjacency, start, weights) {
 #' @param ncov An integer for the number of covariates
 #' @param R An integer indicating the number of iterations for the Gibbs
 #' @param N An integer indicating the size of the interconnected network
+#' @param burnin An integer indicating when to start saving values in the chain
 #' @param rho_mat A numeric matrix for rho terms
 #' @param adjacency A binary matrix indicating connected units
-#' @param cov_i A numeric matrix for observed covariate values (starting values for chain)
 #' @param weights A numeric vector indicating the number of neighbors for each node
+#' @param cov_mat A numeric matrix for starting values for each covariate
 #' @param group_lengths An integer vector indicating the number of categories for each variable
 #' @param group_functions An integer vector indicating the type of variable
-#' @return A numeric matrix for auxiliary covariate values
-#' between [0,1]
+#' @return A list of numeric matrices that contain the covariate values and neighbor covariate
+#' values for each person at that specific point in the chain
 #'
 #'
 #' @export
@@ -87,24 +88,54 @@ networkGibbsOutCovCpp <- function(tau, rho, nu, ncov, R, N, burnin, rho_mat, adj
     .Call('_autognet_networkGibbsOutCovCpp', PACKAGE = 'autognet', tau, rho, nu, ncov, R, N, burnin, rho_mat, adjacency, weights, cov_mat, group_lengths, group_functions)
 }
 
-#' IF DOCUMENT
+#' Estimate overall network causal effect
 #'
-#' Given the specific inputs, determine auxiliary outcome
-#' values using a Gibbs sampling procedure.
+#' Given the specific inputs, determine estimates of psi (overall) for each
+#' unit under some treatment regime using a Gibbs sampling procedure.
 #'
-#' @param IF DOCUMENT
+#' @param cov_list The output from networkGibbsOutCovCpp function
+#' @param beta A numeric vector for the parameters from the outcome model
+#' @param p A probability of treated units for the binomial treatment assignment draw
+#' @param ncov A numeric vector for the parameters from the outcome model
+#' @param R An integer indicating the number of iterations for the Gibbs
+#' @param N An integer indicating the size of the interconnected network
+#' @param adjacency A binary matrix indicating connected units
+#' @param weights A numeric vector indicating the number of neighbors for each node
+#' @param burnin The index to start evaluation as one would normally have for a burnin
+#' for a Bayesian computation.
+#' @param average An indicator of whether to evaluate the causal effects as an average
+#' of the R iterations
+#' @return A vector of length N containing the estimated value of psi for each person
 #'
 #' @export
 networkGibbsOuts1Cpp <- function(cov_list, beta, p, ncov, R, N, adjacency, weights, burnin, average) {
     .Call('_autognet_networkGibbsOuts1Cpp', PACKAGE = 'autognet', cov_list, beta, p, ncov, R, N, adjacency, weights, burnin, average)
 }
 
-#' IF DOCUMENT
+#' Estimate components for direct and spillover effects
 #'
-#' Given the specific inputs, determine auxiliary outcome
-#' values using a Gibbs sampling procedure.
+#' Given the specific inputs, determine estimates of psi for the given
+#' units under some treatment regime and individual treatment value
+#' using a Gibbs sampling procedure.
 #'
-#' @param IF DOCUMENT
+#' @param cov_list The output from networkGibbsOutCovCpp function
+#' @param beta A numeric vector for the parameters from the outcome model
+#' @param p A probability of treated units for the binomial treatment assignment draw
+#' @param ncov A numeric vector for the parameters from the outcome model
+#' @param R An integer indicating the number of iterations for the Gibbs
+#' @param N An integer indicating the size of the interconnected network
+#' @param adjacency A binary matrix indicating connected units
+#' @param weights A numeric vector indicating the number of neighbors for each node
+#' @param subset The indices of the individuals, as they appear in the adjacency matrix,
+#' to be included in the network causal effects estimates.
+#' @param treatment_value The intervened value of an individual's treatment assignment
+#' for each person in subset
+#' @param burnin The index to start evaluation as one would normally have for a burnin
+#' for a Bayesian computation.
+#' @param average An indicator of whether to evaluate the causal effects as an average
+#' of the R iterations
+#' @return A vector of length N containing the estimated value of psi for each person
+#'
 #'
 #' @export
 networkGibbsOuts2Cpp <- function(cov_list, beta, p, ncov, R, N, adjacency, weights, subset, treatment_value, burnin, average) {

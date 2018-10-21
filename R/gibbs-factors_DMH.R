@@ -1,7 +1,8 @@
 #' @include bayesModelFunctions.R
 NULL
 
-#' Fit the covariate model for the Bayesian auto-g network computation.
+#' Estimate parameters from the covariate and outcome model
+#' via Double Metropolis Hastings algorithm.
 #'
 #' \code{agcParam} takes a data frame containing a treatment,
 #' outcome, and various covariates to be modeled via an MCMC.

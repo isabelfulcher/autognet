@@ -2,15 +2,38 @@
 % Please edit documentation in R/RcppExports.R
 \name{networkGibbsOuts1Cpp}
 \alias{networkGibbsOuts1Cpp}
-\title{IF DOCUMENT}
+\title{Estimate overall network causal effect}
 \usage{
 networkGibbsOuts1Cpp(cov_list, beta, p, ncov, R, N, adjacency, weights,
   burnin, average)
 }
 \arguments{
-\item{IF}{DOCUMENT}
+\item{cov_list}{The output from networkGibbsOutCovCpp function}
+
+\item{beta}{A numeric vector for the parameters from the outcome model}
+
+\item{p}{A probability of treated units for the binomial treatment assignment draw}
+
+\item{ncov}{A numeric vector for the parameters from the outcome model}
+
+\item{R}{An integer indicating the number of iterations for the Gibbs}
+
+\item{N}{An integer indicating the size of the interconnected network}
+
+\item{adjacency}{A binary matrix indicating connected units}
+
+\item{weights}{A numeric vector indicating the number of neighbors for each node}
+
+\item{burnin}{The index to start evaluation as one would normally have for a burnin
+for a Bayesian computation.}
+
+\item{average}{An indicator of whether to evaluate the causal effects as an average
+of the R iterations}
+}
+\value{
+A vector of length N containing the estimated value of psi for each person
 }
 \description{
-Given the specific inputs, determine auxiliary outcome
-values using a Gibbs sampling procedure.
+Given the specific inputs, determine estimates of psi (overall) for each
+unit under some treatment regime using a Gibbs sampling procedure.
 }

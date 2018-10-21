@@ -4,7 +4,7 @@
 \name{agcEffect}
 \alias{agcEffect}
 \alias{agcEffect,list-method}
-\title{Evaluate the out model for the Bayesian auto-g network computation.}
+\title{Evaluate the network causal effects from estimated Gibbs factors.}
 \usage{
 agcEffect(mod, burnin = 1, thin = 0.5, treatment_allocation = 0.5,
   subset = 0, R = 10, burnin_R = 10, burnin_cov = 10,
@@ -29,30 +29,35 @@ not thin at all).}
 in the network to receive the treatment. Should be a number between
 0 and 1. Default = 0.5.}
 
-\item{subset}{IF DOCUMENT; default 0 -> everyone}
+\item{subset}{The indices of the individuals, as they appear in the
+adjacency matrix, to be included in the network causal effects estimates.
+Default = 0 (include everyone).}
 
 \item{R}{The number of iterations for the Gibbs inner loop.
 Default = 10.}
 
-\item{burnin_R}{IF DOCUMENT
-Default = 10.}
+\item{burnin_R}{The index to start evaluation as one would normally
+have for a burnin for a Bayesian computation. Default = 10.}
 
-\item{burnin_cov}{IF DOCUMENT
-Default = 10.}
+\item{burnin_cov}{The index to start saving covariates for use in the
+network causal effect chains. Default = 10.}
 
-\item{average}{IF DOCUMENT}
+\item{average}{An indicator of whether to evaluate the causal effects as an average
+of the R iterations. Default = "TRUE".}
 
-\item{index_override}{IF DOCUMENT}
+\item{index_override}{The MCMC outer loop iteration numbers to include
+in the evaluation of the causal effects. This will override the burnin and
+thin parameters. Default = 0 (all iterations included).}
 }
 \value{
 An S3 object of type \code{agcEffectClass} that contains essential
 values for the outcome model.
 }
 \description{
-\code{agcEffect} takes a covariate model fit from \code{agcParam},
-parameters for an MCMC, and the specified treatment effect and
-determines the causal estimates (direct and spillover) generated
-from the network structure.
+\code{agcEffect} takes a covariate and outcome model fit
+from \code{agcParam}, parameters for an MCMC, and the
+specified treatment effect and determines the causal estimates (direct and spillover)
+generated from the network structure.
 }
 \examples{
 

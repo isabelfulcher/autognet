@@ -1,12 +1,12 @@
 #' @include gibbs-factors_DMH.R
 NULL
 
-#' Evaluate the out model for the Bayesian auto-g network computation.
+#' Evaluate the network causal effects from estimated Gibbs factors.
 #'
-#' \code{agcEffect} takes a covariate model fit from \code{agcParam},
-#' parameters for an MCMC, and the specified treatment effect and
-#' determines the causal estimates (direct and spillover) generated
-#' from the network structure.
+#' \code{agcEffect} takes a covariate and outcome model fit
+#' from \code{agcParam}, parameters for an MCMC, and the
+#' specified treatment effect and determines the causal estimates (direct and spillover)
+#' generated from the network structure.
 #'
 #'
 #' @param mod An \code{agcParamClass} object from \code{agcParam}
@@ -23,20 +23,26 @@ NULL
 #' in the network to receive the treatment. Should be a number between
 #' 0 and 1. Default = 0.5.
 #'
-#' @param subset IF DOCUMENT; default 0 -> everyone
+#' @param subset The indices of the individuals, as they appear in the
+#' adjacency matrix, to be included in the network causal effects estimates.
+#' Default = 0 (include everyone).
 #'
 #' @param R The number of iterations for the Gibbs inner loop.
 #' Default = 10.
 #'
-#' @param burnin_R IF DOCUMENT
-#' Default = 10.
+#' @param burnin_R The index to start evaluation as one would normally
+#' have for a burnin for a Bayesian computation. Default = 10.
 #'
-#' @param burnin_cov  IF DOCUMENT
-#' Default = 10.
+#' @param burnin_cov The index to start saving covariates for use in the
+#' network causal effect chains. Default = 10.
 #'
-#' @param average IF DOCUMENT
+#' @param average An indicator of whether to evaluate the causal effects as an average
+#' of the R iterations. Default = "TRUE".
 #'
-#' @param index_override IF DOCUMENT
+#' @param index_override The MCMC outer loop iteration numbers to include
+#' in the evaluation of the causal effects. This will override the burnin and
+#' thin parameters. Default = 0 (all iterations included).
+#'
 #'
 #' @return An S3 object of type \code{agcEffectClass} that contains essential
 #' values for the outcome model.
@@ -75,8 +81,14 @@ setMethod("agcEffect", signature("list", "ANY", "ANY", "ANY", "ANY", "ANY", "ANY
             stopifnot(R >= 1)
 
             # Determine which indices to actually compute
-            total <- dim(mod[[1]])[1]
-            indices <- seq(from = 1 + burnin, to = total, by = round(1/thin))
+            if (is.null(dim(mod[[1]]))){
+              indices <- 1
+              noprog <- 1
+            } else{
+              total <- dim(mod[[1]])[1]
+              indices <- seq(from = 1 + burnin, to = total, by = round(1/thin))
+              noprog <- 0
+            }
 
             # Manually establish the indices that will be evaluted in the loop
             if(index_override != 0){
@@ -116,7 +128,7 @@ setMethod("agcEffect", signature("list", "ANY", "ANY", "ANY", "ANY", "ANY", "ANY
             }
 
             # Now evaluate each chain that results from the burnin and thin
-            pb <- txtProgressBar(min = 1, max = length(indices), style = 3)
+            if (noprog==0){pb <- txtProgressBar(min = 1, max = length(indices), style = 3)}
             mat <- matrix(NA, nrow = length(indices), ncol = 3)
             for(idxx in 1:length(indices)){
               b <- indices[idxx]
@@ -161,7 +173,7 @@ setMethod("agcEffect", signature("list", "ANY", "ANY", "ANY", "ANY", "ANY", "ANY
                                                        burnin = burnin_R, average = as.numeric(average)))
 
               mat[idxx,] <- c(psi_gamma, psi_1_gamma - psi_0_gamma, psi_0_gamma - psi_zero)
-              setTxtProgressBar(pb, idxx)
+              if(noprog==0){setTxtProgressBar(pb, idxx)}
             }
 
             output <- mat

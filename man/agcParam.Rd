@@ -4,7 +4,8 @@
 \name{agcParam}
 \alias{agcParam}
 \alias{agcParam,data.frame,character,character-method}
-\title{Fit the covariate model for the Bayesian auto-g network computation.}
+\title{Estimate parameters from the covariate and outcome model
+via Double Metropolis Hastings algorithm.}
 \usage{
 agcParam(data, treatment, outcome, adjmat, B = 25000, R = 10,
   seed = 1, scale.alpha = 0.005, scale.beta = 0.005,
