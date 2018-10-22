@@ -81,14 +81,9 @@ setMethod("agcEffect", signature("list", "ANY", "ANY", "ANY", "ANY", "ANY", "ANY
             stopifnot(R >= 1)
 
             # Determine which indices to actually compute
-            if (is.null(dim(mod[[1]]))){
-              indices <- 1
-              noprog <- 1
-            } else{
-              total <- dim(mod[[1]])[1]
-              indices <- seq(from = 1 + burnin, to = total, by = round(1/thin))
-              noprog <- 0
-            }
+            total <- dim(mod[[1]])[1]
+            indices <- seq(from = 1 + burnin, to = total, by = round(1/thin))
+            noprog <- as.numeric(length(indices)==1)
 
             # Manually establish the indices that will be evaluted in the loop
             if(index_override != 0){
