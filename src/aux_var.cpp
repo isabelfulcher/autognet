@@ -600,7 +600,7 @@ NumericVector networkGibbsOuts2Cpp (List cov_list, NumericVector beta, float p,
     }
 
     if(average == 0){
-      output_subset[person] = prob_outcome(R-1, person);
+      output_subset[ind] = prob_outcome(R-1, person);
     } else {
       NumericVector rowVec = outcome_all(_,person);
       // ghetto mean
@@ -612,7 +612,7 @@ NumericVector networkGibbsOuts2Cpp (List cov_list, NumericVector beta, float p,
           number = number + 1;
         }
       }
-      output_subset[person] = total/number;
+      output_subset[ind] = total/number;
     }
   }
   return(output_subset);

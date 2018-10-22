@@ -210,7 +210,7 @@ network.gibbs.out1 <- function(cov.list,beta,p,ncov,
     } else {
       prob_outcome[r,i] <- plogis(beta[1] + # intercept term
                                       beta[3:(2+J)]%*%cov_mat[i,] + # individual covariate term(s)
-                                      beta[(3+J)]*sum(outcome_1[adjacency[[i]]]/weights[i]) + # neighbor outcome
+                                      beta[(3+J)]*sum(outcome[adjacency[[i]]]/weights[i]) + # neighbor outcome   # IF -> changed outcome_1 to outcome... correct?
                                       sum(beta[(4+J+(1:J))]*cov_mat_n[i,]))
 
       outcome[i] <- rbinom(1,1,prob_outcome[r,i])
