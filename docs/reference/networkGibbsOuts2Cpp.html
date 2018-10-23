@@ -6,7 +6,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>autognet: an R package for network data effect estimations — autognet • autognet</title>
+<title>Estimate components for direct and spillover effects — networkGibbsOuts2Cpp • autognet</title>
 
 <!-- jquery -->
 <script src="https://code.jquery.com/jquery-3.1.0.min.js" integrity="sha384-nrOSfDHtoPMzJHjVTdCopGqIqeYETSXhZDFyniQ8ZHcVy08QesyHcnOUpMpqnmWq" crossorigin="anonymous"></script>
@@ -30,11 +30,11 @@
 
 
 
-<meta property="og:title" content="autognet: an R package for network data effect estimations — autognet" />
+<meta property="og:title" content="Estimate components for direct and spillover effects — networkGibbsOuts2Cpp" />
 
-<meta property="og:description" content="The autognet R package implements a comprehensive
-covariate and outcome model for the estimation of
-causal direct and spill over effects from network data" />
+<meta property="og:description" content="Given the specific inputs, determine estimates of psi for the given
+units under some treatment regime and individual treatment value
+using a Gibbs sampling procedure." />
 <meta name="twitter:card" content="summary" />
 
 
@@ -106,26 +106,92 @@ causal direct and spill over effects from network data" />
 <div class="row">
   <div class="col-md-9 contents">
     <div class="page-header">
-    <h1>autognet: an R package for network data effect estimations</h1>
+    <h1>Estimate components for direct and spillover effects</h1>
     
-    <div class="hidden name"><code>autognet.Rd</code></div>
+    <div class="hidden name"><code>networkGibbsOuts2Cpp.Rd</code></div>
     </div>
 
     <div class="ref-description">
     
-    <p>The autognet R package implements a comprehensive
-covariate and outcome model for the estimation of
-causal direct and spill over effects from network data</p>
+    <p>Given the specific inputs, determine estimates of psi for the given
+units under some treatment regime and individual treatment value
+using a Gibbs sampling procedure.</p>
     
     </div>
 
-        
+    <pre class="usage"><span class='fu'>networkGibbsOuts2Cpp</span>(<span class='no'>cov_list</span>, <span class='no'>beta</span>, <span class='no'>p</span>, <span class='no'>ncov</span>, <span class='no'>R</span>, <span class='no'>N</span>, <span class='no'>adjacency</span>, <span class='no'>weights</span>,
+  <span class='no'>subset</span>, <span class='no'>treatment_value</span>, <span class='no'>burnin</span>, <span class='no'>average</span>)</pre>
+    
+    <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
+    <table class="ref-arguments">
+    <colgroup><col class="name" /><col class="desc" /></colgroup>
+    <tr>
+      <th>cov_list</th>
+      <td><p>The output from networkGibbsOutCovCpp function</p></td>
+    </tr>
+    <tr>
+      <th>beta</th>
+      <td><p>A numeric vector for the parameters from the outcome model</p></td>
+    </tr>
+    <tr>
+      <th>p</th>
+      <td><p>A probability of treated units for the binomial treatment assignment draw</p></td>
+    </tr>
+    <tr>
+      <th>ncov</th>
+      <td><p>A numeric vector for the parameters from the outcome model</p></td>
+    </tr>
+    <tr>
+      <th>R</th>
+      <td><p>An integer indicating the number of iterations for the Gibbs</p></td>
+    </tr>
+    <tr>
+      <th>N</th>
+      <td><p>An integer indicating the size of the interconnected network</p></td>
+    </tr>
+    <tr>
+      <th>adjacency</th>
+      <td><p>A binary matrix indicating connected units</p></td>
+    </tr>
+    <tr>
+      <th>weights</th>
+      <td><p>A numeric vector indicating the number of neighbors for each node</p></td>
+    </tr>
+    <tr>
+      <th>subset</th>
+      <td><p>The indices of the individuals, as they appear in the adjacency matrix,
+to be included in the network causal effects estimates.</p></td>
+    </tr>
+    <tr>
+      <th>treatment_value</th>
+      <td><p>The intervened value of an individual's treatment assignment
+for each person in subset</p></td>
+    </tr>
+    <tr>
+      <th>burnin</th>
+      <td><p>The index to start evaluation as one would normally have for a burnin
+for a Bayesian computation.</p></td>
+    </tr>
+    <tr>
+      <th>average</th>
+      <td><p>An indicator of whether to evaluate the causal effects as an average
+of the R iterations</p></td>
+    </tr>
+    </table>
+    
+    <h2 class="hasAnchor" id="value"><a class="anchor" href="#value"></a>Value</h2>
+
+    <p>A vector of length N containing the estimated value of psi for each person</p>
+    
 
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="sidebar">
     <h2>Contents</h2>
     <ul class="nav nav-pills nav-stacked">
-                </ul>
+      <li><a href="#arguments">Arguments</a></li>
+      
+      <li><a href="#value">Value</a></li>
+          </ul>
 
   </div>
 </div>

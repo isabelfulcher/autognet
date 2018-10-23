@@ -7,8 +7,10 @@ templates:
 navbar:
   left:
   - text: Reference
+    icon: fa-cog
     href: reference/index.html
-  - text: AutoGNet-manuscript
+  - text: Manuscript
+    icon: fa-book
     href: https://arxiv.org/abs/1709.01577
   - text: GitHub
     icon: fa-github

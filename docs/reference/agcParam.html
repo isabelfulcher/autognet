@@ -6,7 +6,8 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Fit the covariate model for the Bayesian auto-g network computation. — agcParam • autognet</title>
+<title>Estimate parameters from the covariate and outcome model
+via Double Metropolis Hastings algorithm. — agcParam • autognet</title>
 
 <!-- jquery -->
 <script src="https://code.jquery.com/jquery-3.1.0.min.js" integrity="sha384-nrOSfDHtoPMzJHjVTdCopGqIqeYETSXhZDFyniQ8ZHcVy08QesyHcnOUpMpqnmWq" crossorigin="anonymous"></script>
@@ -30,7 +31,8 @@
 
 
 
-<meta property="og:title" content="Fit the covariate model for the Bayesian auto-g network computation. — agcParam" />
+<meta property="og:title" content="Estimate parameters from the covariate and outcome model
+via Double Metropolis Hastings algorithm. — agcParam" />
 
 <meta property="og:description" content="agcParam takes a data frame containing a treatment,
 outcome, and various covariates to be modeled via an MCMC.
@@ -64,17 +66,25 @@ be contained in the adjacency matrix (adjmat)." />
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">autognet</a>
-        <span class="label label-default" data-toggle="tooltip" data-placement="bottom" title="Released package">0.0.1</span>
+        <span class="label label-default" data-toggle="tooltip" data-placement="bottom" title="Released package">0.0.2</span>
       </span>
     </div>
 
     <div id="navbar" class="navbar-collapse collapse">
       <ul class="nav navbar-nav">
         <li>
-  <a href="../reference/index.html">Reference</a>
+  <a href="../reference/index.html">
+    <span class="fa fa-cog"></span>
+     
+    Reference
+  </a>
 </li>
 <li>
-  <a href="https://arxiv.org/abs/1709.01577">AutoGNet-manuscript</a>
+  <a href="https://arxiv.org/abs/1709.01577">
+    <span class="fa fa-book-open"></span>
+     
+    Manuscript
+  </a>
 </li>
 <li>
   <a href="https://github.com/isabelfulcher/autognet">
@@ -99,7 +109,8 @@ be contained in the adjacency matrix (adjmat)." />
 <div class="row">
   <div class="col-md-9 contents">
     <div class="page-header">
-    <h1>Fit the covariate model for the Bayesian auto-g network computation.</h1>
+    <h1>Estimate parameters from the covariate and outcome model
+via Double Metropolis Hastings algorithm.</h1>
     
     <div class="hidden name"><code>agcParam.Rd</code></div>
     </div>
@@ -114,12 +125,14 @@ be contained in the adjacency matrix (adjmat).</p>
     </div>
 
     <pre class="usage"><span class='fu'>agcParam</span>(<span class='no'>data</span>, <span class='no'>treatment</span>, <span class='no'>outcome</span>, <span class='no'>adjmat</span>, <span class='kw'>B</span> <span class='kw'>=</span> <span class='fl'>25000</span>, <span class='kw'>R</span> <span class='kw'>=</span> <span class='fl'>10</span>,
-  <span class='kw'>seed</span> <span class='kw'>=</span> <span class='fu'>c</span>(<span class='fl'>1</span>))
+  <span class='kw'>seed</span> <span class='kw'>=</span> <span class='fl'>1</span>, <span class='kw'>scale.alpha</span> <span class='kw'>=</span> <span class='fl'>0.005</span>, <span class='kw'>scale.beta</span> <span class='kw'>=</span> <span class='fl'>0.005</span>,
+  <span class='kw'>prior.alpha</span> <span class='kw'>=</span> <span class='fl'>1</span>, <span class='kw'>prior.beta</span> <span class='kw'>=</span> <span class='fl'>1</span>)
 
-
-  <span class='co'># S4 method for data.frame,character,character,matrix,numeric,numeric,numeric</span>
-<span class='fu'>agcParam</span>(<span class='no'>data</span>,
-  <span class='no'>treatment</span>, <span class='no'>outcome</span>, <span class='no'>adjmat</span>, <span class='kw'>B</span> <span class='kw'>=</span> <span class='fl'>25000</span>, <span class='kw'>R</span> <span class='kw'>=</span> <span class='fl'>10</span>, <span class='kw'>seed</span> <span class='kw'>=</span> <span class='fu'>c</span>(<span class='fl'>1</span>))</pre>
+<span class='co'># S4 method for data.frame,character,character</span>
+<span class='fu'>agcParam</span>(<span class='no'>data</span>, <span class='no'>treatment</span>,
+  <span class='no'>outcome</span>, <span class='no'>adjmat</span>, <span class='kw'>B</span> <span class='kw'>=</span> <span class='fl'>25000</span>, <span class='kw'>R</span> <span class='kw'>=</span> <span class='fl'>10</span>, <span class='kw'>seed</span> <span class='kw'>=</span> <span class='fl'>1</span>,
+  <span class='kw'>scale.alpha</span> <span class='kw'>=</span> <span class='fl'>0.005</span>, <span class='kw'>scale.beta</span> <span class='kw'>=</span> <span class='fl'>0.005</span>, <span class='kw'>prior.alpha</span> <span class='kw'>=</span> <span class='fl'>1</span>,
+  <span class='kw'>prior.beta</span> <span class='kw'>=</span> <span class='fl'>1</span>)</pre>
     
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
@@ -159,10 +172,38 @@ Default = 10.</p></td>
     </tr>
     <tr>
       <th>seed</th>
-      <td><p>An integer vector of the values for <code>set.seed</code>.
-By default, only c(1), which runs one chain with a seed of 1. If
-the vector is of length greater than 1, then multiple chains with
-both values as a seed will be run in parallel.</p></td>
+      <td><p>An integer value for <code>set.seed</code>.
+By default, only <code>1</code>, which runs one chain with a seed of 1.</p></td>
+    </tr>
+    <tr>
+      <th>scale.alpha</th>
+      <td><p>A numeric vector of values for the
+parameters of the covariate model proposal distribution
+variance. By default, a scalar of .005 is applied to all values. If you
+wish to replace you can supply another scalar or the appropriate length
+vector.</p></td>
+    </tr>
+    <tr>
+      <th>scale.beta</th>
+      <td><p>A numeric vector of values for the
+parameters of the outcome model proposal distribution
+variance. By default, a scalar of .005 is applied to all values. If you
+wish to replace you can supply another scalar or the appropriate length
+vector.</p></td>
+    </tr>
+    <tr>
+      <th>prior.alpha</th>
+      <td><p>A binary (0/1) indicator for the proposal distribution
+for the covariate model parameters. If 1, the noninformative prior described in
+the paper will be used. If 0, an improper prior (i.e. proportional to 1) will
+be used. Default is 1.</p></td>
+    </tr>
+    <tr>
+      <th>prior.beta</th>
+      <td><p>A binary (0/1) indicator for the proposal distribution
+for the outcome model parameters. If 1, the noninformative prior described in
+the paper will be used. If 0, an improper prior (i.e. proportional to 1) will
+be used. Default is 1.</p></td>
     </tr>
     </table>
     

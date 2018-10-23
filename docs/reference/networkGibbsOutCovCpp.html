@@ -6,7 +6,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>autognet: an R package for network data effect estimations — autognet • autognet</title>
+<title>Run Gibbs sampler for covariates to use in network causal effect estimation — networkGibbsOutCovCpp • autognet</title>
 
 <!-- jquery -->
 <script src="https://code.jquery.com/jquery-3.1.0.min.js" integrity="sha384-nrOSfDHtoPMzJHjVTdCopGqIqeYETSXhZDFyniQ8ZHcVy08QesyHcnOUpMpqnmWq" crossorigin="anonymous"></script>
@@ -30,11 +30,10 @@
 
 
 
-<meta property="og:title" content="autognet: an R package for network data effect estimations — autognet" />
+<meta property="og:title" content="Run Gibbs sampler for covariates to use in network causal effect estimation — networkGibbsOutCovCpp" />
 
-<meta property="og:description" content="The autognet R package implements a comprehensive
-covariate and outcome model for the estimation of
-causal direct and spill over effects from network data" />
+<meta property="og:description" content="Given the specific inputs, determine covariate
+values using a Gibbs sampling procedure." />
 <meta name="twitter:card" content="summary" />
 
 
@@ -106,26 +105,92 @@ causal direct and spill over effects from network data" />
 <div class="row">
   <div class="col-md-9 contents">
     <div class="page-header">
-    <h1>autognet: an R package for network data effect estimations</h1>
+    <h1>Run Gibbs sampler for covariates to use in network causal effect estimation</h1>
     
-    <div class="hidden name"><code>autognet.Rd</code></div>
+    <div class="hidden name"><code>networkGibbsOutCovCpp.Rd</code></div>
     </div>
 
     <div class="ref-description">
     
-    <p>The autognet R package implements a comprehensive
-covariate and outcome model for the estimation of
-causal direct and spill over effects from network data</p>
+    <p>Given the specific inputs, determine covariate
+values using a Gibbs sampling procedure.</p>
     
     </div>
 
-        
+    <pre class="usage"><span class='fu'>networkGibbsOutCovCpp</span>(<span class='no'>tau</span>, <span class='no'>rho</span>, <span class='no'>nu</span>, <span class='no'>ncov</span>, <span class='no'>R</span>, <span class='no'>N</span>, <span class='no'>burnin</span>, <span class='no'>rho_mat</span>, <span class='no'>adjacency</span>,
+  <span class='no'>weights</span>, <span class='no'>cov_mat</span>, <span class='no'>group_lengths</span>, <span class='no'>group_functions</span>)</pre>
+    
+    <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
+    <table class="ref-arguments">
+    <colgroup><col class="name" /><col class="desc" /></colgroup>
+    <tr>
+      <th>tau</th>
+      <td><p>A numeric vector for the intercept terms in the covariate model</p></td>
+    </tr>
+    <tr>
+      <th>rho</th>
+      <td><p>A numeric vector for the correlation terms in the covariate model</p></td>
+    </tr>
+    <tr>
+      <th>nu</th>
+      <td><p>A numberic vector for the neighbor terms in the covariate model</p></td>
+    </tr>
+    <tr>
+      <th>ncov</th>
+      <td><p>An integer for the number of covariates</p></td>
+    </tr>
+    <tr>
+      <th>R</th>
+      <td><p>An integer indicating the number of iterations for the Gibbs</p></td>
+    </tr>
+    <tr>
+      <th>N</th>
+      <td><p>An integer indicating the size of the interconnected network</p></td>
+    </tr>
+    <tr>
+      <th>burnin</th>
+      <td><p>An integer indicating when to start saving values in the chain</p></td>
+    </tr>
+    <tr>
+      <th>rho_mat</th>
+      <td><p>A numeric matrix for rho terms</p></td>
+    </tr>
+    <tr>
+      <th>adjacency</th>
+      <td><p>A binary matrix indicating connected units</p></td>
+    </tr>
+    <tr>
+      <th>weights</th>
+      <td><p>A numeric vector indicating the number of neighbors for each node</p></td>
+    </tr>
+    <tr>
+      <th>cov_mat</th>
+      <td><p>A numeric matrix for starting values for each covariate</p></td>
+    </tr>
+    <tr>
+      <th>group_lengths</th>
+      <td><p>An integer vector indicating the number of categories for each variable</p></td>
+    </tr>
+    <tr>
+      <th>group_functions</th>
+      <td><p>An integer vector indicating the type of variable</p></td>
+    </tr>
+    </table>
+    
+    <h2 class="hasAnchor" id="value"><a class="anchor" href="#value"></a>Value</h2>
+
+    <p>A list of numeric matrices that contain the covariate values and neighbor covariate
+values for each person at that specific point in the chain</p>
+    
 
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="sidebar">
     <h2>Contents</h2>
     <ul class="nav nav-pills nav-stacked">
-                </ul>
+      <li><a href="#arguments">Arguments</a></li>
+      
+      <li><a href="#value">Value</a></li>
+          </ul>
 
   </div>
 </div>
