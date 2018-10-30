@@ -43,6 +43,9 @@ NULL
 #' in the evaluation of the causal effects. This will override the burnin and
 #' thin parameters. Default = 0 (all iterations included).
 #'
+#' @param return_effects An indicator of whether to return direct and spillover effects
+#' or just the counterfactual expectations. Use the latter if you wish to construct overall
+#' effects or different types of spillover effects. Default = 1.
 #'
 #' @return An S3 object of type \code{agcEffectClass} that contains essential
 #' values for the outcome model.
@@ -67,15 +70,18 @@ NULL
 #' @export
 setGeneric(name = "agcEffect",
            def = function(mod, burnin = 1, thin = 0.5, treatment_allocation = 0.5, subset = 0,
-                          R = 10, burnin_R = 10, burnin_cov = 10, average = TRUE, index_override = 0)
+                          R = 10, burnin_R = 10, burnin_cov = 10, average = TRUE, index_override = 0,
+                          return_effects = 1)
              standardGeneric("agcEffect"))
 
 #' @rdname agcEffect
-setMethod("agcEffect", signature("list", "ANY", "ANY", "ANY", "ANY", "ANY", "ANY", "ANY", "ANY", "ANY"),
+setMethod("agcEffect", signature("list", "ANY", "ANY", "ANY", "ANY", "ANY", "ANY", "ANY", "ANY", "ANY", "ANY"),
           definition = function(mod, burnin = 1, thin = 0.2, treatment_allocation = 0.5, subset = 0,
-                                R = 10, burnin_R = 10, burnin_cov = 10, average = TRUE, index_override = 0){
+                                R = 10, burnin_R = 10, burnin_cov = 10, average = TRUE, index_override = 0,
+                                return_effects = 1){
 
-            stopifnot(treatment_allocation > 0 & treatment_allocation < 1)
+            stopifnot(treatment_allocation >= 0 & treatment_allocation <= 1)
+            stopifnot(return_effects == 0 | return_effects == 1)
             stopifnot(thin> 0 & thin <= 1)
             stopifnot("agcParamClass" %in% class(mod))
             stopifnot(R >= 1)
@@ -124,7 +130,11 @@ setMethod("agcEffect", signature("list", "ANY", "ANY", "ANY", "ANY", "ANY", "ANY
 
             # Now evaluate each chain that results from the burnin and thin
             if (noprog==0){pb <- txtProgressBar(min = 1, max = length(indices), style = 3)}
-            mat <- matrix(NA, nrow = length(indices), ncol = 3)
+            if (return_effects == 1){
+              mat <- matrix(NA, nrow = length(indices), ncol = 3)
+            } else {
+              mat <- matrix(NA, nrow = length(indices), ncol = 4)
+            }
             for(idxx in 1:length(indices)){
               b <- indices[idxx]
               tau <- alpha[b,1:ncov]
@@ -148,12 +158,12 @@ setMethod("agcEffect", signature("list", "ANY", "ANY", "ANY", "ANY", "ANY", "ANY
               psi_gamma <-mean(networkGibbsOuts1Cpp(cov_list = cov.list, beta = beta[b,], p = treatment_allocation,
                                                     ncov = ncov, R= R + burnin_R, N = N,  # have to do R + burnin for weird C++ error
                                                     adjacency = adjacency, weights = weights,
-                                                    burnin = burnin_R, average = as.numeric(average)))
+                                                    burnin = burnin_R, average = as.numeric(average))[subset])
 
               psi_zero <-mean(networkGibbsOuts1Cpp(cov_list = cov.list, beta = beta[b,], p = 0,
                                                    ncov = ncov, R = R + burnin_R, N = N,
                                                    adjacency = adjacency, weights = weights,
-                                                   burnin = burnin_R, average = as.numeric(average)))
+                                                   burnin = burnin_R, average = as.numeric(average))[subset])
 
               psi_1_gamma <- mean(networkGibbsOuts2Cpp(cov_list = cov.list, beta = beta[b,], p = treatment_allocation,
                                                        ncov = ncov, R = R + burnin_R, N = N,   # have to do R + burnin for weird C++ error
@@ -167,11 +177,23 @@ setMethod("agcEffect", signature("list", "ANY", "ANY", "ANY", "ANY", "ANY", "ANY
                                                        treatment_value = 0,
                                                        burnin = burnin_R, average = as.numeric(average)))
 
-              mat[idxx,] <- c(psi_gamma, psi_1_gamma - psi_0_gamma, psi_0_gamma - psi_zero)
+              if (return_effects == 1){
+                return <- c(psi_gamma, psi_1_gamma - psi_0_gamma, psi_0_gamma - psi_zero)
+              } else {
+                return <- c(psi_gamma, psi_zero, psi_1_gamma, psi_0_gamma)
+              }
+
+              mat[idxx,] <- return
               if(noprog==0){setTxtProgressBar(pb, idxx)}
             }
 
             output <- mat
-            colnames(output) <- c("average", "direct", "spillover")
+
+            if (return_effects == 1){
+              colnames(output) <- c("average", "direct", "spillover")
+            } else {
+              colnames(output) <- c("average", "psi_zero", "psi_1_gamma","psi_0_gamma")
+            }
+
             return(output)
           })

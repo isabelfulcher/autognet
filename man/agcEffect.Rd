@@ -8,11 +8,12 @@
 \usage{
 agcEffect(mod, burnin = 1, thin = 0.5, treatment_allocation = 0.5,
   subset = 0, R = 10, burnin_R = 10, burnin_cov = 10,
-  average = TRUE, index_override = 0)
+  average = TRUE, index_override = 0, return_effects = 1)
 
 \S4method{agcEffect}{list}(mod, burnin = 1, thin = 0.2,
   treatment_allocation = 0.5, subset = 0, R = 10, burnin_R = 10,
-  burnin_cov = 10, average = TRUE, index_override = 0)
+  burnin_cov = 10, average = TRUE, index_override = 0,
+  return_effects = 1)
 }
 \arguments{
 \item{mod}{An \code{agcParamClass} object from \code{agcParam}
@@ -48,6 +49,10 @@ of the R iterations. Default = "TRUE".}
 \item{index_override}{The MCMC outer loop iteration numbers to include
 in the evaluation of the causal effects. This will override the burnin and
 thin parameters. Default = 0 (all iterations included).}
+
+\item{return_effects}{An indicator of whether to return direct and spillover effects
+or just the counterfactual expectations. Use the latter if you wish to construct overall
+effects or different types of spillover effects. Default = 1.}
 }
 \value{
 An S3 object of type \code{agcEffectClass} that contains essential
