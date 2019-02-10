@@ -349,13 +349,20 @@ lapply(1:nIt, function(i){
 end_time <- Sys.time()
 Rtime_cov <- end_time - start_time
 
+#-------
+# New - 10 Feb 2019 // modify nu for matrix format
+#--------
+nu_mat <- diag(nu)
+group_lengths_forced <- c(1,1,1,1,1)
+group_functions_forced <- c(1,1,1,1,1)
+
 set.seed(1)
 start_time <- Sys.time()
 lapply(1:nIt, function(i){
-  networkGibbsOutCovCpp(tau, rho, nu,
+  networkGibbsOutCovCpp(tau, rho, nu_mat,
                         ncov, R, N, burnin, rho_mat,
                         adjacency, weights, cov.i,
-                        group_lengths, group_functions)
+                        group_lengths_forced, group_functions_forced)
 
 }) -> olist_cpp_covlist
 end_time <- Sys.time()
@@ -371,10 +378,20 @@ test_that("C++ version is faster for causal estimates", {
 })
 
 # Pull out one cov.list for the causal effect bros
-cov.list <-  networkGibbsOutCovCpp(tau, rho, nu,
+set.seed(1)
+cov.list <-  networkGibbsOutCovCpp(tau, rho, nu_mat,
                                    ncov, R, N, burnin, rho_mat,
                                    adjacency, weights, cov.i,
-                                   group_lengths, group_functions)
+                                   group_lengths_forced, group_functions_forced)
+
+
+# Check that it matches with the forced
+set.seed(1)
+Rout1 <- autognet:::network.gibbs.cov(tau, rho, nu,
+                                      ncov, R, N, burnin, adjacency_r, weights,
+                                      group_lengths_forced, group_functions_forced)
+
+
 
 ##########################
 # Test final Cpp functions

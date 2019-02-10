@@ -238,7 +238,7 @@ IntegerVector auxVarOutcomeCpp (NumericVector beta, IntegerVector trt, arma::mat
 //'
 //' @export
 // [[Rcpp::export]]
-List networkGibbsOutCovCpp (NumericVector tau, NumericVector rho, NumericVector nu,
+List networkGibbsOutCovCpp (NumericVector tau, NumericVector rho, NumericMatrix nu,
                             int ncov, int R, int N, int burnin, NumericMatrix rho_mat,
                             List adjacency,  IntegerVector weights, arma::mat cov_mat,
                             IntegerVector group_lengths, IntegerVector group_functions){
@@ -302,11 +302,17 @@ List networkGibbsOutCovCpp (NumericVector tau, NumericVector rho, NumericVector 
           arma::vec rowVec = rho_mat(_,j);
           arma::mat covVec = vectorise(cov_mat.rows(i,i));
           arma::uvec whichN = adjacency[i];
-          arma::mat covAdjVec = cov_mat.cols(j,j);
           float weights_i = weights[i];
-          float nei_w = sum(covAdjVec.elem(whichN)/weights_i);
-          float prob_Lj = R::plogis(arma::as_scalar(tau[j] + dot(rowVec,covVec) + nu[j]*nei_w), 0, 1, 1, 0);
-          cov_mat(i,j) = rcpp_rbinom_one(prob_Lj); // prob_Lj
+
+          NumericVector j_sums(ncov, 0);
+          for (int y = 0; y < ncov; ++y){
+            arma::mat covAdjVec = cov_mat.cols(y,y);
+            float nei_w = sum(covAdjVec.elem(whichN)/weights_i);
+            j_sums(y) = nei_w * nu(j,y);
+          }
+
+          float prob_Lj = R::plogis(arma::as_scalar(tau[j] + dot(rowVec,covVec) +sum(j_sums)), 0, 1, 1, 0);
+          cov_mat(i,j) =  rcpp_rbinom_one(prob_Lj); // prob_Lj; //
 
         } // add in normal here once form is decided
 

@@ -26,7 +26,7 @@ Suggests:
     knitr
 URL: https://isabelfulcher.github.io/autognet/
 BugReports: https://github.com/isabelfulcher/autognet/issues
-RoxygenNote: 6.1.0
+RoxygenNote: 6.1.1
 Encoding: UTF-8
 VignetteBuilder: knitr
 Collate: 

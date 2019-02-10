@@ -80,14 +80,14 @@ BEGIN_RCPP
 END_RCPP
 }
 // networkGibbsOutCovCpp
-List networkGibbsOutCovCpp(NumericVector tau, NumericVector rho, NumericVector nu, int ncov, int R, int N, int burnin, NumericMatrix rho_mat, List adjacency, IntegerVector weights, arma::mat cov_mat, IntegerVector group_lengths, IntegerVector group_functions);
+List networkGibbsOutCovCpp(NumericVector tau, NumericVector rho, NumericMatrix nu, int ncov, int R, int N, int burnin, NumericMatrix rho_mat, List adjacency, IntegerVector weights, arma::mat cov_mat, IntegerVector group_lengths, IntegerVector group_functions);
 RcppExport SEXP _autognet_networkGibbsOutCovCpp(SEXP tauSEXP, SEXP rhoSEXP, SEXP nuSEXP, SEXP ncovSEXP, SEXP RSEXP, SEXP NSEXP, SEXP burninSEXP, SEXP rho_matSEXP, SEXP adjacencySEXP, SEXP weightsSEXP, SEXP cov_matSEXP, SEXP group_lengthsSEXP, SEXP group_functionsSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< NumericVector >::type tau(tauSEXP);
     Rcpp::traits::input_parameter< NumericVector >::type rho(rhoSEXP);
-    Rcpp::traits::input_parameter< NumericVector >::type nu(nuSEXP);
+    Rcpp::traits::input_parameter< NumericMatrix >::type nu(nuSEXP);
     Rcpp::traits::input_parameter< int >::type ncov(ncovSEXP);
     Rcpp::traits::input_parameter< int >::type R(RSEXP);
     Rcpp::traits::input_parameter< int >::type N(NSEXP);
