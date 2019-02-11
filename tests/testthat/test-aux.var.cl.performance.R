@@ -343,7 +343,7 @@ start_time <- Sys.time()
 lapply(1:nIt, function(i){
   autognet:::network.gibbs.cov(tau, rho, nu,
                                ncov, R, N, burnin, adjacency_r, weights,
-                               group_lengths, group_functions)
+                               group_lengths, group_functions, start = cov.i)
 
 }) -> olist_r_covlist
 end_time <- Sys.time()
@@ -355,6 +355,8 @@ Rtime_cov <- end_time - start_time
 nu_mat <- diag(nu)
 group_lengths_forced <- c(1,1,1,1,1)
 group_functions_forced <- c(1,1,1,1,1)
+rho_mat_forced <-  matrix(0, nrow = J, ncol = J)
+rho_mat_forced[lower.tri(rho_mat_forced, diag=FALSE)] <- rho; rho_mat_forced <- rho_mat_forced + t(rho_mat_forced)
 
 set.seed(1)
 start_time <- Sys.time()
@@ -362,7 +364,7 @@ lapply(1:nIt, function(i){
   networkGibbsOutCovCpp(tau, rho, nu_mat,
                         ncov, R, N, burnin, rho_mat,
                         adjacency, weights, cov.i,
-                        group_lengths_forced, group_functions_forced)
+                        group_lengths_forced, group_functions_forced, additional_nu = 1)
 
 }) -> olist_cpp_covlist
 end_time <- Sys.time()
@@ -380,17 +382,16 @@ test_that("C++ version is faster for causal estimates", {
 # Pull out one cov.list for the causal effect bros
 set.seed(1)
 cov.list <-  networkGibbsOutCovCpp(tau, rho, nu_mat,
-                                   ncov, R, N, burnin, rho_mat,
+                                   ncov, R, N, burnin, rho_mat_forced,
                                    adjacency, weights, cov.i,
-                                   group_lengths_forced, group_functions_forced)
+                                   group_lengths_forced, group_functions_forced, additional_nu = 1)
 
 
 # Check that it matches with the forced
 set.seed(1)
 Rout1 <- autognet:::network.gibbs.cov(tau, rho, nu,
                                       ncov, R, N, burnin, adjacency_r, weights,
-                                      group_lengths_forced, group_functions_forced)
-
+                                      group_lengths_forced, group_functions_forced, return_probs = FALSE, start = cov.i)
 
 
 ##########################
@@ -403,7 +404,7 @@ set.seed(5)
 start_time <- Sys.time()
 sapply(1:nIt, function(i){
   mean(autognet:::network.gibbs.out1(cov.list,beta.thin[b,],pr_trt,ncov,
-                                     R,N,adjacency_r,weights, 0,average = 1))
+                                     R,N,adjacency_r,weights, 0, average = 1))
 
 }) -> olist_r_out1
 end_time <- Sys.time()

@@ -153,10 +153,12 @@ setMethod("agcEffect", signature("list", "ANY", "ANY", "ANY", "ANY", "ANY", "ANY
               nu  <- alpha[b,(ncov+nrho+1):L]
 
               # Reformat to matrix for off-diagonal nu terms
-              if(len(nu) == ncov){
+              if(length(nu) == ncov){
                 nu_mat <- diag(nu)
+                additional_nu <- 0
               } else {
                 nu_mat <- matrix(nu, nrow = ncov, byrow = TRUE)
+                additional_nu <- 1
               }
               nu <- nu_mat
 
@@ -172,7 +174,7 @@ setMethod("agcEffect", signature("list", "ANY", "ANY", "ANY", "ANY", "ANY", "ANY
               cov.list <- networkGibbsOutCovCpp(tau, rho, nu,
                                                 ncov, R + burnin_R, N, burnin_cov, rho_mat,
                                                 adjacency, weights, cov_mat,
-                                                group_lengths, group_functions)
+                                                group_lengths, group_functions, additional_nu)
 
               ## NON-INDIVIDUAL GIBBS (overall effects) ##
               psi_gamma <-mean(networkGibbsOuts1Cpp(cov_list = cov.list, beta = beta[b,], p = treatment_allocation,

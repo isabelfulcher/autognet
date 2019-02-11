@@ -68,7 +68,7 @@ auxVarOutcomeCpp <- function(beta, trt, cov, N, R, adjacency, start, weights) {
 #'
 #' @param tau A numeric vector for the intercept terms in the covariate model
 #' @param rho A numeric vector for the correlation terms in the covariate model
-#' @param nu A numberic vector for the neighbor terms in the covariate model
+#' @param nu A numberic matrix for the neighbor terms in the covariate model
 #' @param ncov An integer for the number of covariates
 #' @param R An integer indicating the number of iterations for the Gibbs
 #' @param N An integer indicating the size of the interconnected network
@@ -79,13 +79,15 @@ auxVarOutcomeCpp <- function(beta, trt, cov, N, R, adjacency, start, weights) {
 #' @param cov_mat A numeric matrix for starting values for each covariate
 #' @param group_lengths An integer vector indicating the number of categories for each variable
 #' @param group_functions An integer vector indicating the type of variable
+#' @param additional_nu An integer (0/1) specifying whether neighbor cross terms will be evaluated (i.e. non-zero)
+#'
 #' @return A list of numeric matrices that contain the covariate values and neighbor covariate
 #' values for each person at that specific point in the chain
 #'
 #'
 #' @export
-networkGibbsOutCovCpp <- function(tau, rho, nu, ncov, R, N, burnin, rho_mat, adjacency, weights, cov_mat, group_lengths, group_functions) {
-    .Call('_autognet_networkGibbsOutCovCpp', PACKAGE = 'autognet', tau, rho, nu, ncov, R, N, burnin, rho_mat, adjacency, weights, cov_mat, group_lengths, group_functions)
+networkGibbsOutCovCpp <- function(tau, rho, nu, ncov, R, N, burnin, rho_mat, adjacency, weights, cov_mat, group_lengths, group_functions, additional_nu) {
+    .Call('_autognet_networkGibbsOutCovCpp', PACKAGE = 'autognet', tau, rho, nu, ncov, R, N, burnin, rho_mat, adjacency, weights, cov_mat, group_lengths, group_functions, additional_nu)
 }
 
 #' Estimate overall network causal effect

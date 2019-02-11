@@ -221,7 +221,7 @@ IntegerVector auxVarOutcomeCpp (NumericVector beta, IntegerVector trt, arma::mat
 //'
 //' @param tau A numeric vector for the intercept terms in the covariate model
 //' @param rho A numeric vector for the correlation terms in the covariate model
-//' @param nu A numberic vector for the neighbor terms in the covariate model
+//' @param nu A numberic matrix for the neighbor terms in the covariate model
 //' @param ncov An integer for the number of covariates
 //' @param R An integer indicating the number of iterations for the Gibbs
 //' @param N An integer indicating the size of the interconnected network
@@ -232,6 +232,8 @@ IntegerVector auxVarOutcomeCpp (NumericVector beta, IntegerVector trt, arma::mat
 //' @param cov_mat A numeric matrix for starting values for each covariate
 //' @param group_lengths An integer vector indicating the number of categories for each variable
 //' @param group_functions An integer vector indicating the type of variable
+//' @param additional_nu An integer (0/1) specifying whether neighbor cross terms will be evaluated (i.e. non-zero)
+//'
 //' @return A list of numeric matrices that contain the covariate values and neighbor covariate
 //' values for each person at that specific point in the chain
 //'
@@ -241,7 +243,7 @@ IntegerVector auxVarOutcomeCpp (NumericVector beta, IntegerVector trt, arma::mat
 List networkGibbsOutCovCpp (NumericVector tau, NumericVector rho, NumericMatrix nu,
                             int ncov, int R, int N, int burnin, NumericMatrix rho_mat,
                             List adjacency,  IntegerVector weights, arma::mat cov_mat,
-                            IntegerVector group_lengths, IntegerVector group_functions){
+                            IntegerVector group_lengths, IntegerVector group_functions, int additional_nu){
 
   //int J = ncov;
   int number_of_groups = group_lengths.size();
@@ -304,15 +306,27 @@ List networkGibbsOutCovCpp (NumericVector tau, NumericVector rho, NumericMatrix 
           arma::uvec whichN = adjacency[i];
           float weights_i = weights[i];
 
-          NumericVector j_sums(ncov, 0);
-          for (int y = 0; y < ncov; ++y){
-            arma::mat covAdjVec = cov_mat.cols(y,y);
-            float nei_w = sum(covAdjVec.elem(whichN)/weights_i);
-            j_sums(y) = nei_w * nu(j,y);
-          }
+          // Do an additional loop over the covariates only if necessary
+          if(additional_nu == 1){
 
-          float prob_Lj = R::plogis(arma::as_scalar(tau[j] + dot(rowVec,covVec) +sum(j_sums)), 0, 1, 1, 0);
-          cov_mat(i,j) =  rcpp_rbinom_one(prob_Lj); // prob_Lj; //
+            NumericVector j_sums(ncov, 0.0);
+            for(int y = 0; y < ncov; ++y){
+              arma::mat covAdjVec = cov_mat.cols(y,y);
+              float nei_w = sum(covAdjVec.elem(whichN)/weights_i);
+              j_sums(y) = nei_w * nu(j,y);
+            }
+
+            float prob_Lj = R::plogis(arma::as_scalar(tau[j] + dot(rowVec,covVec) + sum(j_sums)), 0, 1, 1, 0);
+            cov_mat(i,j) =  rcpp_rbinom_one(prob_Lj); // prob_Lj; //
+
+          } else {
+
+            // Only pull the one term on the diagonal from nu (for faster computation)
+            arma::mat covAdjVec = cov_mat.cols(j,j);
+            float nei_w = sum(covAdjVec.elem(whichN)/weights_i);
+            float prob_Lj = R::plogis(arma::as_scalar(tau[j] + dot(rowVec,covVec) + nu(j,j)*nei_w), 0, 1, 1, 0);
+            cov_mat(i,j) =  rcpp_rbinom_one(prob_Lj); // prob_Lj; //
+          }
 
         } // add in normal here once form is decided
 
@@ -346,10 +360,16 @@ List networkGibbsOutCovCpp (NumericVector tau, NumericVector rho, NumericMatrix 
 
     // After all people, put cov_mat_save into the list that will be returned
     if(r >= burnin){
+      //cov_save[r-burnin] = cov_mat_save;
       List cov_init = Rcpp::clone(cov_save);
       cov_init[r-burnin] = cov_mat_save;
-      cov_save = cov_init;
+      cov_save = Rcpp::clone(cov_init);
     }
+
+    //Rcpp::Rcout << "\n cov_mat_save \n";
+    //Rcpp::Rcout << cov_mat_save;
+
+
   }
   return(cov_save);
 }
