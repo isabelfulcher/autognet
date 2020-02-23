@@ -383,11 +383,16 @@ List networkGibbsOutCovCpp (NumericVector tau, NumericVector rho, NumericMatrix 
 //' @param cov_list The output from networkGibbsOutCovCpp function
 //' @param beta A numeric vector for the parameters from the outcome model
 //' @param p A probability of treated units for the binomial treatment assignment draw
-//' @param ncov A numeric vector for the parameters from the outcome model
+//' @param a_fixed Izzie to update
+//' @param dynamic_coef_vec Izzie to update
+//' @param dynamic_among_treated Izzie to update
+//' @param dynamic_single_edge Izzie to update
+//' @param ncov An integer for the parameters from the outcome model
 //' @param R An integer indicating the number of iterations for the Gibbs
 //' @param N An integer indicating the size of the interconnected network
 //' @param adjacency A binary matrix indicating connected units
 //' @param weights A numeric vector indicating the number of neighbors for each node
+//' @param treated_indicator Izzie to update
 //' @param burnin The index to start evaluation as one would normally have for a burnin
 //' for a Bayesian computation.
 //' @param average An indicator of whether to evaluate the causal effects as an average
@@ -396,15 +401,17 @@ List networkGibbsOutCovCpp (NumericVector tau, NumericVector rho, NumericMatrix 
 //'
 //' @export
 // [[Rcpp::export]]
-NumericVector networkGibbsOuts1Cpp (List cov_list, NumericVector beta, float p, int ncov,
-                                    int R, int N,  List adjacency, IntegerVector weights,
+NumericVector networkGibbsOuts1Cpp (List cov_list, NumericVector beta, float p,
+                                    IntegerVector a_fixed, NumericVector dynamic_coef_vec,
+                                    int dynamic_among_treated, int dynamic_single_edge,
+                                    int ncov, int R, int N,  List adjacency, IntegerVector weights,
+                                    IntegerVector treated_indicator,
                                     int burnin, int average){
   int J = ncov;
 
   // Storage
   NumericMatrix prob_outcome(R,N);
   NumericMatrix outcome_save(R,N); // only used if average == 1
-
 
   // Starting values
   IntegerVector outcome =  as<IntegerVector>(rbinom(N, 1, R::runif(0.1, 0.9)));
@@ -421,7 +428,44 @@ NumericVector networkGibbsOuts1Cpp (List cov_list, NumericVector beta, float p, 
     // Loop over each person
     for (int i = 0; i < N; ++i){
       if(p != 0){
-        a_bar[i] = rcpp_rbinom_one(p);
+
+        // Define case where a is fixed -- only when a_fixed is supplied per person
+        int length_a_fixed = a_fixed.length();
+        if(length_a_fixed == N){
+          a_bar[i] = a_fixed[i];
+        }
+
+        // Define special treatment case logic
+        if(dynamic_single_edge >= 0){
+
+          // we specified a special edge case
+          // pull covariate and define logic accordingly
+          int l_i = cov_mat(i,dynamic_single_edge);
+          if(l_i == 1){
+            a_bar[i] = rcpp_rbinom_one(p);
+          } else {
+            a_bar[i] = 0;
+          }
+        }
+
+        // Regression case TO UPDATE
+        int length_dynamic_coef_vec = dynamic_coef_vec.length();
+        //if()
+
+        // Safety; no regression TO UPDATE with opposite of above in the if statement
+        if(dynamic_single_edge < 0 && length_a_fixed != N){
+          a_bar[i] = rcpp_rbinom_one(p);
+        }
+
+        // Potentially update if dynamic among treated
+        if(dynamic_among_treated == 1){
+          int treated_i = treated_indicator[i];
+
+          // Force the untreated to be zero
+          if(treated_i == 0){
+            a_bar[i] = 0;
+          }
+        }
 
         // Generate Y given A, L
         float weights_i = weights[i];
@@ -525,11 +569,16 @@ NumericVector networkGibbsOuts1Cpp (List cov_list, NumericVector beta, float p, 
 //' @param cov_list The output from networkGibbsOutCovCpp function
 //' @param beta A numeric vector for the parameters from the outcome model
 //' @param p A probability of treated units for the binomial treatment assignment draw
+//' @param a_fixed Izzie to update
+//' @param dynamic_coef_vec Izzie to update
+//' @param dynamic_among_treated Izzie to update
+//' @param dynamic_single_edge Izzie to update
 //' @param ncov A numeric vector for the parameters from the outcome model
 //' @param R An integer indicating the number of iterations for the Gibbs
 //' @param N An integer indicating the size of the interconnected network
 //' @param adjacency A binary matrix indicating connected units
 //' @param weights A numeric vector indicating the number of neighbors for each node
+//' @param treated_indicator Izzie to update
 //' @param subset The indices of the individuals, as they appear in the adjacency matrix,
 //' to be included in the network causal effects estimates.
 //' @param treatment_value The intervened value of an individual's treatment assignment
@@ -544,8 +593,11 @@ NumericVector networkGibbsOuts1Cpp (List cov_list, NumericVector beta, float p, 
 //' @export
 // [[Rcpp::export]]
 NumericVector networkGibbsOuts2Cpp (List cov_list, NumericVector beta, float p,
+                                    IntegerVector a_fixed, NumericVector dynamic_coef_vec,
+                                    int dynamic_among_treated, int dynamic_single_edge,
                                     int ncov, int R, int N,
-                                    List adjacency, IntegerVector weights, IntegerVector subset,
+                                    List adjacency, IntegerVector weights,
+                                    IntegerVector treated_indicator, IntegerVector subset,
                                     float treatment_value, int burnin, int average){
 
   int n = subset.size();
@@ -574,7 +626,51 @@ NumericVector networkGibbsOuts2Cpp (List cov_list, NumericVector beta, float p,
 
       // Loop over each person
       for (int i = 0; i < N; ++i){
-        a_bar[i] = rcpp_rbinom_one(p);
+        /// Updating treatment value based on chosen treatment allocation strategy
+
+        // Define case where a is fixed -- only when a_fixed is supplied per person
+        int length_a_fixed = a_fixed.length();
+        if(length_a_fixed == N){
+          a_bar[i] = a_fixed[i];
+        }
+
+        // Define special treatment case logic
+        if(dynamic_single_edge >= 0){
+          // Rcout << "Running dynamic_single_edge";
+          // we specified a special edge case
+          // pull covariate and define logic accordingly
+          int l_i = cov_mat(i,dynamic_single_edge);
+          if(l_i == 1){
+            a_bar[i] = rcpp_rbinom_one(p);
+          } else {
+            a_bar[i] = 0;
+          }
+        }
+
+        // Regression case TO UPDATE
+        int length_dynamic_coef_vec = dynamic_coef_vec.length();
+        //if()
+
+        // Safety; no regression TO UPDATE with opposite of above in the if statement
+        if(dynamic_single_edge < 0 && length_a_fixed != N){
+          a_bar[i] = rcpp_rbinom_one(p);
+          // Rcout << "Doing the safety";
+        }
+
+        // Potentially update if dynamic among treated
+        if(dynamic_among_treated == 1){
+          // Rcout << "Running dynamic_among_treated";
+
+          int treated_i = treated_indicator[i];
+
+          // Force the untreated to be zero
+          if(treated_i == 0){
+            a_bar[i] = 0;
+          }
+        }
+
+
+        /// Fixed person's treatment value for direct and spillover effects
         a_bar[person] = treatment_value;
 
         // Generate Y given A, L

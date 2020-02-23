@@ -8,6 +8,7 @@ NULL
 #' specified treatment effect and determines the causal estimates (direct and spillover)
 #' generated from the network structure.
 #'
+#' ADD DISCUSSION OF DIFFERENT TREATMENT REGIME OPTIONS by linking to URL
 #'
 #' @param mod An \code{agcParamClass} object from \code{agcParam}
 #' containing variables to be considered for the covariate model.
@@ -26,6 +27,14 @@ NULL
 #' @param subset The indices of the individuals, as they appear in the
 #' adjacency matrix, to be included in the network causal effects estimates.
 #' Default = 0 (include everyone).
+#'
+#' @param a_fixed Izzie to Update
+#'#'
+#' @param dynamic_coef_vec Izzie to Update
+#'
+#' @param dynamic_among_treated Izzie to Update
+#'
+#' @param dynamic_single_edge Izzie to Update
 #'
 #' @param R The number of iterations for the Gibbs inner loop.
 #' Default = 10.
@@ -70,13 +79,15 @@ NULL
 #' @export
 setGeneric(name = "agcEffect",
            def = function(mod, burnin = 1, thin = 0.5, treatment_allocation = 0.5, subset = 0,
+                          a_fixed = c(0), dynamic_coef_vec = c(0), dynamic_among_treated = 0, dynamic_single_edge = 0,
                           R = 10, burnin_R = 10, burnin_cov = 10, average = TRUE, index_override = 0,
                           return_effects = 1)
              standardGeneric("agcEffect"))
 
 #' @rdname agcEffect
-setMethod("agcEffect", signature("list", "ANY", "ANY", "ANY", "ANY", "ANY", "ANY", "ANY", "ANY", "ANY", "ANY"),
+setMethod("agcEffect", signature("list", "ANY", "ANY", "ANY", "ANY", "ANY", "ANY", "ANY", "ANY", "ANY", "ANY", "ANY", "ANY", "ANY", "ANY"),
           definition = function(mod, burnin = 1, thin = 0.2, treatment_allocation = 0.5, subset = 0,
+                                a_fixed = c(0), dynamic_coef_vec = c(0), dynamic_among_treated = 0, dynamic_single_edge = 0,
                                 R = 10, burnin_R = 10, burnin_cov = 10, average = TRUE, index_override = 0,
                                 return_effects = 1){
 
@@ -90,6 +101,10 @@ setMethod("agcEffect", signature("list", "ANY", "ANY", "ANY", "ANY", "ANY", "ANY
             total <- dim(mod[[1]])[1]
             indices <- seq(from = 1 + burnin, to = total, by = round(1/thin))
             noprog <- as.numeric(length(indices)==1)
+
+            # make up value so that the variable is defined
+            # avoids an error but does nothing
+            treated_indicator = c(0,0)
 
             # Manually establish the indices that will be evaluted in the loop
             if(index_override != 0){
@@ -130,6 +145,9 @@ setMethod("agcEffect", signature("list", "ANY", "ANY", "ANY", "ANY", "ANY", "ANY
             for (i in 1:N){
               adjacency[[i]] <- unname(which(adjmat[i,]==1)) - 1 # the -1 is for zero indexing in Cpp
             }
+
+            # Establish C++-friendly dynamic single edge case for edge case of one covariate
+            dynamic_single_edge <- dynamic_single_edge - 1
 
             # Figure out the subset logic
             # WE ALREADY DO THE ZERO-based indexing in C++ DON'T DO IT AGAIN HERE
@@ -176,26 +194,40 @@ setMethod("agcEffect", signature("list", "ANY", "ANY", "ANY", "ANY", "ANY", "ANY
                                                 adjacency, weights, cov_mat,
                                                 group_lengths, group_functions, additional_nu)
 
+              ## For dynamic among treated setup ##
+              if(dynamic_among_treated==1){
+                treated_indicator = 1:N %in% subset
+              }
               ## NON-INDIVIDUAL GIBBS (overall effects) ##
               psi_gamma <-mean(networkGibbsOuts1Cpp(cov_list = cov.list, beta = beta[b,], p = treatment_allocation,
+                                                    a_fixed = a_fixed,  dynamic_coef_vec = dynamic_coef_vec,
+                                                    dynamic_among_treated = dynamic_among_treated, dynamic_single_edge = dynamic_single_edge,
                                                     ncov = ncov, R= R + burnin_R, N = N,  # have to do R + burnin for weird C++ error
-                                                    adjacency = adjacency, weights = weights,
+                                                    adjacency = adjacency, weights = weights, treated_indicator = treated_indicator,
                                                     burnin = burnin_R, average = as.numeric(average))[subset])
 
               psi_zero <-mean(networkGibbsOuts1Cpp(cov_list = cov.list, beta = beta[b,], p = 0,
-                                                   ncov = ncov, R = R + burnin_R, N = N,
-                                                   adjacency = adjacency, weights = weights,
+                                                   a_fixed = a_fixed,  dynamic_coef_vec = dynamic_coef_vec,
+                                                   dynamic_among_treated = dynamic_among_treated, dynamic_single_edge = dynamic_single_edge,
+                                                   ncov = ncov, R = R + burnin_R, N = N, # have to do R + burnin for weird C++ error
+                                                   adjacency = adjacency, weights = weights, treated_indicator = treated_indicator,
                                                    burnin = burnin_R, average = as.numeric(average))[subset])
 
               psi_1_gamma <- mean(networkGibbsOuts2Cpp(cov_list = cov.list, beta = beta[b,], p = treatment_allocation,
+                                                       a_fixed = a_fixed,  dynamic_coef_vec = dynamic_coef_vec,
+                                                       dynamic_among_treated = dynamic_among_treated, dynamic_single_edge = dynamic_single_edge,
                                                        ncov = ncov, R = R + burnin_R, N = N,   # have to do R + burnin for weird C++ error
-                                                       adjacency = adjacency, weights = weights, subset = subset,
+                                                       adjacency = adjacency, weights = weights, treated_indicator = treated_indicator,
+                                                       subset = subset,
                                                        treatment_value = 1.0,
                                                        burnin = burnin_R, average = as.numeric(average)))
 
               psi_0_gamma <- mean(networkGibbsOuts2Cpp(cov_list = cov.list, beta = beta[b,], p = treatment_allocation,
+                                                       a_fixed = a_fixed,  dynamic_coef_vec = dynamic_coef_vec,
+                                                       dynamic_among_treated = dynamic_among_treated, dynamic_single_edge = dynamic_single_edge,
                                                        ncov = ncov, R = R + burnin_R, N = N,   # have to do R + burnin for weird C++ error
-                                                       adjacency = adjacency, weights = weights, subset = subset,
+                                                       adjacency = adjacency, weights = weights, treated_indicator = treated_indicator,
+                                                       subset = subset,
                                                        treatment_value = 0,
                                                        burnin = burnin_R, average = as.numeric(average)))
 

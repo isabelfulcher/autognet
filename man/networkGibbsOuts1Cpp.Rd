@@ -4,8 +4,9 @@
 \alias{networkGibbsOuts1Cpp}
 \title{Estimate overall network causal effect}
 \usage{
-networkGibbsOuts1Cpp(cov_list, beta, p, ncov, R, N, adjacency, weights,
-  burnin, average)
+networkGibbsOuts1Cpp(cov_list, beta, p, a_fixed, dynamic_coef_vec,
+  dynamic_among_treated, dynamic_single_edge, ncov, R, N, adjacency,
+  weights, treated_indicator, burnin, average)
 }
 \arguments{
 \item{cov_list}{The output from networkGibbsOutCovCpp function}
@@ -14,7 +15,15 @@ networkGibbsOuts1Cpp(cov_list, beta, p, ncov, R, N, adjacency, weights,
 
 \item{p}{A probability of treated units for the binomial treatment assignment draw}
 
-\item{ncov}{A numeric vector for the parameters from the outcome model}
+\item{a_fixed}{Izzie to update}
+
+\item{dynamic_coef_vec}{Izzie to update}
+
+\item{dynamic_among_treated}{Izzie to update}
+
+\item{dynamic_single_edge}{Izzie to update}
+
+\item{ncov}{An integer for the parameters from the outcome model}
 
 \item{R}{An integer indicating the number of iterations for the Gibbs}
 
@@ -23,6 +32,8 @@ networkGibbsOuts1Cpp(cov_list, beta, p, ncov, R, N, adjacency, weights,
 \item{adjacency}{A binary matrix indicating connected units}
 
 \item{weights}{A numeric vector indicating the number of neighbors for each node}
+
+\item{treated_indicator}{Izzie to update}
 
 \item{burnin}{The index to start evaluation as one would normally have for a burnin
 for a Bayesian computation.}

@@ -98,11 +98,16 @@ networkGibbsOutCovCpp <- function(tau, rho, nu, ncov, R, N, burnin, rho_mat, adj
 #' @param cov_list The output from networkGibbsOutCovCpp function
 #' @param beta A numeric vector for the parameters from the outcome model
 #' @param p A probability of treated units for the binomial treatment assignment draw
-#' @param ncov A numeric vector for the parameters from the outcome model
+#' @param a_fixed Izzie to update
+#' @param dynamic_coef_vec Izzie to update
+#' @param dynamic_among_treated Izzie to update
+#' @param dynamic_single_edge Izzie to update
+#' @param ncov An integer for the parameters from the outcome model
 #' @param R An integer indicating the number of iterations for the Gibbs
 #' @param N An integer indicating the size of the interconnected network
 #' @param adjacency A binary matrix indicating connected units
 #' @param weights A numeric vector indicating the number of neighbors for each node
+#' @param treated_indicator Izzie to update
 #' @param burnin The index to start evaluation as one would normally have for a burnin
 #' for a Bayesian computation.
 #' @param average An indicator of whether to evaluate the causal effects as an average
@@ -110,8 +115,8 @@ networkGibbsOutCovCpp <- function(tau, rho, nu, ncov, R, N, burnin, rho_mat, adj
 #' @return A vector of length N containing the estimated value of psi for each person
 #'
 #' @export
-networkGibbsOuts1Cpp <- function(cov_list, beta, p, ncov, R, N, adjacency, weights, burnin, average) {
-    .Call('_autognet_networkGibbsOuts1Cpp', PACKAGE = 'autognet', cov_list, beta, p, ncov, R, N, adjacency, weights, burnin, average)
+networkGibbsOuts1Cpp <- function(cov_list, beta, p, a_fixed, dynamic_coef_vec, dynamic_among_treated, dynamic_single_edge, ncov, R, N, adjacency, weights, treated_indicator, burnin, average) {
+    .Call('_autognet_networkGibbsOuts1Cpp', PACKAGE = 'autognet', cov_list, beta, p, a_fixed, dynamic_coef_vec, dynamic_among_treated, dynamic_single_edge, ncov, R, N, adjacency, weights, treated_indicator, burnin, average)
 }
 
 #' Estimate components for direct and spillover effects
@@ -123,11 +128,16 @@ networkGibbsOuts1Cpp <- function(cov_list, beta, p, ncov, R, N, adjacency, weigh
 #' @param cov_list The output from networkGibbsOutCovCpp function
 #' @param beta A numeric vector for the parameters from the outcome model
 #' @param p A probability of treated units for the binomial treatment assignment draw
+#' @param a_fixed Izzie to update
+#' @param dynamic_coef_vec Izzie to update
+#' @param dynamic_among_treated Izzie to update
+#' @param dynamic_single_edge Izzie to update
 #' @param ncov A numeric vector for the parameters from the outcome model
 #' @param R An integer indicating the number of iterations for the Gibbs
 #' @param N An integer indicating the size of the interconnected network
 #' @param adjacency A binary matrix indicating connected units
 #' @param weights A numeric vector indicating the number of neighbors for each node
+#' @param treated_indicator Izzie to update
 #' @param subset The indices of the individuals, as they appear in the adjacency matrix,
 #' to be included in the network causal effects estimates.
 #' @param treatment_value The intervened value of an individual's treatment assignment
@@ -140,7 +150,7 @@ networkGibbsOuts1Cpp <- function(cov_list, beta, p, ncov, R, N, adjacency, weigh
 #'
 #'
 #' @export
-networkGibbsOuts2Cpp <- function(cov_list, beta, p, ncov, R, N, adjacency, weights, subset, treatment_value, burnin, average) {
-    .Call('_autognet_networkGibbsOuts2Cpp', PACKAGE = 'autognet', cov_list, beta, p, ncov, R, N, adjacency, weights, subset, treatment_value, burnin, average)
+networkGibbsOuts2Cpp <- function(cov_list, beta, p, a_fixed, dynamic_coef_vec, dynamic_among_treated, dynamic_single_edge, ncov, R, N, adjacency, weights, treated_indicator, subset, treatment_value, burnin, average) {
+    .Call('_autognet_networkGibbsOuts2Cpp', PACKAGE = 'autognet', cov_list, beta, p, a_fixed, dynamic_coef_vec, dynamic_among_treated, dynamic_single_edge, ncov, R, N, adjacency, weights, treated_indicator, subset, treatment_value, burnin, average)
 }
 

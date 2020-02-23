@@ -1,6 +1,7 @@
 
 context("Verify autog computation works for covariate model")
-set.seed(14651)
+set.seed(1)
+library(autognet)
 
 # Use sample data baked into package
 rdsIn <- readRDS(paste0(system.file('extdata',package='autognet'),"/agc-example.rds"))
@@ -24,7 +25,7 @@ test_that("Supplying multiple values in the seed vector yields multiple chains",
 context("Verify autog computation works for outcome model")
 mod <- agcParam(data, treatment, outcome, adjmat,
                 B = 100, R = R, seed = c(1))
-effects <-  agcEffect(mod)
+effects <- agcEffect(mod)
 
 test_that("Outcome model did something", {
 

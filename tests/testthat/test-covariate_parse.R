@@ -1,6 +1,6 @@
 
 context("Covariate parsing for data frames")
-set.seed(14651)
+set.seed(1)
 
 test_df <- data.frame(
   a = factor(c("black", "hispanic", "white", "white", "black", "white", "asian", "white"),

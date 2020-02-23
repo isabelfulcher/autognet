@@ -133,8 +133,6 @@ J <- dim(cov.mat)[2]
 rho_mat <- matrix(0, nrow = J, ncol = J)
 rho_mat[lower.tri(rho_mat, diag=FALSE)] <- rho; rho_mat <- rho_mat + t(rho_mat)
 
-
-library(autognet)
 library(Rcpp)
 
 #--------------------
@@ -142,7 +140,7 @@ library(Rcpp)
 # since it keeps failing
 #-------------
 
-set.seed(1)
+set.seed(14651)
 nIt <- 10
 start_time <- Sys.time()
 lapply(1:nIt, function(i){
@@ -158,7 +156,7 @@ for (i in 1:N){
   adjacency[[i]] <- adjacency[[i]] - 1
 }
 
-set.seed(1)
+set.seed(14651)
 start_time <- Sys.time()
 lapply(1:nIt, function(i){
   aux.p.mat.Cpp <- auxVarCpp(tau,rho,nu,N,R,J, rho_mat,
@@ -338,7 +336,7 @@ rho <- alpha.thin[b,(ncov+1):(ncov+nrho)]
 nu  <- alpha.thin[b,(ncov+nrho+1):L]
 burnin <- 0
 ## MAKE COVARIATE ARRAY ##
-set.seed(1)
+set.seed(14651)
 start_time <- Sys.time()
 lapply(1:nIt, function(i){
   autognet:::network.gibbs.cov(tau, rho, nu,
@@ -358,7 +356,7 @@ group_functions_forced <- c(1,1,1,1,1)
 rho_mat_forced <-  matrix(0, nrow = J, ncol = J)
 rho_mat_forced[lower.tri(rho_mat_forced, diag=FALSE)] <- rho; rho_mat_forced <- rho_mat_forced + t(rho_mat_forced)
 
-set.seed(1)
+set.seed(14651)
 start_time <- Sys.time()
 lapply(1:nIt, function(i){
   networkGibbsOutCovCpp(tau, rho, nu_mat,
@@ -380,7 +378,7 @@ test_that("C++ version is faster for causal estimates", {
 })
 
 # Pull out one cov.list for the causal effect bros
-set.seed(1)
+set.seed(14651)
 cov.list <-  networkGibbsOutCovCpp(tau, rho, nu_mat,
                                    ncov, R, N, burnin, rho_mat_forced,
                                    adjacency, weights, cov.i,
@@ -388,7 +386,7 @@ cov.list <-  networkGibbsOutCovCpp(tau, rho, nu_mat,
 
 
 # Check that it matches with the forced
-set.seed(1)
+set.seed(14651)
 Rout1 <- autognet:::network.gibbs.cov(tau, rho, nu,
                                       ncov, R, N, burnin, adjacency_r, weights,
                                       group_lengths_forced, group_functions_forced, return_probs = FALSE, start = cov.i)
@@ -413,7 +411,21 @@ r_time_out1 <- end_time - start_time
 set.seed(5)
 start_time <- Sys.time()
 sapply(1:nIt, function(i){
-  mean(networkGibbsOuts1Cpp(cov.list,beta.thin[b,],pr_trt,ncov, R,N,adjacency,weights, 0, 1))
+  mean(autognet::networkGibbsOuts1Cpp(cov_list = cov.list,
+                            beta = beta.thin[b,],
+                            p = pr_trt,
+                            a_fixed = 0,
+                            dynamic_coef_vec = 0,
+                            dynamic_among_treated = 0,
+                            dynamic_single_edge = 0-1,
+                            ncov = ncov,
+                            R = R,
+                            N = N,
+                            adjacency = adjacency,
+                            weights = weights,
+                            treated_indicator = c(0,0),
+                            burnin = 0,
+                            average = 1))
 
 }) -> olist_cpp_out1
 end_time <- Sys.time()
@@ -432,6 +444,8 @@ test_that("C++ version is faster for out1 function", {
 set.seed(5)
 start_time <- Sys.time()
 sapply(1:nIt, function(i){
+
+  # R function without updates-- consider modifying
   mean(autognet:::network.gibbs.out2(cov.list,beta.thin[b,],pr_trt,ncov,
                                      R,N,adjacency_r, weights,
                                      subset = 1:length(adjacency), treatment_value = 0.5, burnin = 0, average = 1))
@@ -443,16 +457,25 @@ r_time_out2 <- end_time - start_time
 set.seed(5)
 start_time <- Sys.time()
 sapply(1:nIt, function(i){
-  mean(networkGibbsOuts2Cpp(cov.list,beta.thin[b,],pr_trt,ncov,
-                            R,N,adjacency, weights,
-                            subset = 1:length(adjacency), treatment_value = 0.5, burnin = 0, average = 1))
+  mean(autognet::networkGibbsOuts2Cpp(cov_list = cov.list,
+                            beta = beta.thin[b,],
+                            p = pr_trt,
+                            a_fixed = 0,
+                            dynamic_coef_vec = 0,
+                            dynamic_among_treated = 0,
+                            dynamic_single_edge = 0-1,
+                            ncov = ncov,
+                            R = R, N = N, adjacency = adjacency, weights = weights,
+                            treated_indicator = c(0,0),
+                            subset = 1:length(adjacency), treatment_value = 0.5,
+                            burnin = 0, average = 1))
 
 }) -> olist_cpp_out2
 end_time <- Sys.time()
 cpp_time_out2 <- end_time - start_time
 
 test_that("C++ version is faster for out 2 function", {
-  expect_true(round(olist_r_out2[1], 5) == round(olist_cpp_out2[1],5))
+  expect_true(round(olist_r_out2[1], 5) == round(olist_cpp_out2[1],5)) ## THIS is maybe not good
   # Turns out that these won't be the same based on some Rmultinom internal workings
   fc <- as.numeric(r_time_out2)/as.numeric(cpp_time_out2)
   message(fc)

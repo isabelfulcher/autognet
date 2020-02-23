@@ -1,10 +1,10 @@
 Package: autognet
 Title: Estimation of causal network effects
 Description: R package for the estimation of direct and spillover effects from network data. 
-Date: 2018-10-13
-Version: 0.0.2
+Date: 2020-02-23
+Version: 0.0.3
 Authors@R: c(
-    person("Isabel", "Fulcher", email = "isabelfulcher@g.harvard.edu", role = c("aut", "cre")),
+    person("Isabel", "Fulcher", email = "isabel_fulcher@hms.harvard.edu", role = c("aut", "cre")),
     person("Caleb", "Lareau", email = "caleblareau@g.harvard.edu", role = c("aut"))
     )
 Depends:
