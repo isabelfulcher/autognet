@@ -397,6 +397,7 @@ List networkGibbsOutCovCpp (NumericVector tau, NumericVector rho, NumericMatrix 
 //' for a Bayesian computation.
 //' @param average An indicator of whether to evaluate the causal effects as an average
 //' of the R iterations
+//' @param p_vec Izzie description
 //' @return A vector of length N containing the estimated value of psi for each person
 //'
 //' @export
@@ -406,7 +407,7 @@ NumericVector networkGibbsOuts1Cpp (List cov_list, NumericVector beta, float p,
                                     int dynamic_among_treated, int dynamic_single_edge,
                                     int ncov, int R, int N,  List adjacency, IntegerVector weights,
                                     IntegerVector treated_indicator,
-                                    int burnin, int average){
+                                    int burnin, int average, NumericVector p_vec){
   int J = ncov;
 
   // Storage
@@ -442,9 +443,9 @@ NumericVector networkGibbsOuts1Cpp (List cov_list, NumericVector beta, float p,
           // pull covariate and define logic accordingly
           int l_i = cov_mat(i,dynamic_single_edge);
           if(l_i == 1){
-            a_bar[i] = rcpp_rbinom_one(p);
+            a_bar[i] = rcpp_rbinom_one(p_vec[0]);
           } else {
-            a_bar[i] = 0;
+            a_bar[i] = rcpp_rbinom_one(p_vec[1]);
           }
         }
 
@@ -587,6 +588,7 @@ NumericVector networkGibbsOuts1Cpp (List cov_list, NumericVector beta, float p,
 //' for a Bayesian computation.
 //' @param average An indicator of whether to evaluate the causal effects as an average
 //' of the R iterations
+//' @param p_vec Izzie description
 //' @return A vector of length N containing the estimated value of psi for each person
 //'
 //'
@@ -598,7 +600,7 @@ NumericVector networkGibbsOuts2Cpp (List cov_list, NumericVector beta, float p,
                                     int ncov, int R, int N,
                                     List adjacency, IntegerVector weights,
                                     IntegerVector treated_indicator, IntegerVector subset,
-                                    float treatment_value, int burnin, int average){
+                                    float treatment_value, int burnin, int average, NumericVector p_vec){
 
   int n = subset.size();
   int J = ncov;
@@ -641,9 +643,9 @@ NumericVector networkGibbsOuts2Cpp (List cov_list, NumericVector beta, float p,
           // pull covariate and define logic accordingly
           int l_i = cov_mat(i,dynamic_single_edge);
           if(l_i == 1){
-            a_bar[i] = rcpp_rbinom_one(p);
+            a_bar[i] = rcpp_rbinom_one(p_vec[0]);
           } else {
-            a_bar[i] = 0;
+            a_bar[i] = rcpp_rbinom_one(p_vec[1]);
           }
         }
 

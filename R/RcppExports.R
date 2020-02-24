@@ -112,11 +112,12 @@ networkGibbsOutCovCpp <- function(tau, rho, nu, ncov, R, N, burnin, rho_mat, adj
 #' for a Bayesian computation.
 #' @param average An indicator of whether to evaluate the causal effects as an average
 #' of the R iterations
+#' @param p_vec Izzie description
 #' @return A vector of length N containing the estimated value of psi for each person
 #'
 #' @export
-networkGibbsOuts1Cpp <- function(cov_list, beta, p, a_fixed, dynamic_coef_vec, dynamic_among_treated, dynamic_single_edge, ncov, R, N, adjacency, weights, treated_indicator, burnin, average) {
-    .Call('_autognet_networkGibbsOuts1Cpp', PACKAGE = 'autognet', cov_list, beta, p, a_fixed, dynamic_coef_vec, dynamic_among_treated, dynamic_single_edge, ncov, R, N, adjacency, weights, treated_indicator, burnin, average)
+networkGibbsOuts1Cpp <- function(cov_list, beta, p, a_fixed, dynamic_coef_vec, dynamic_among_treated, dynamic_single_edge, ncov, R, N, adjacency, weights, treated_indicator, burnin, average, p_vec) {
+    .Call('_autognet_networkGibbsOuts1Cpp', PACKAGE = 'autognet', cov_list, beta, p, a_fixed, dynamic_coef_vec, dynamic_among_treated, dynamic_single_edge, ncov, R, N, adjacency, weights, treated_indicator, burnin, average, p_vec)
 }
 
 #' Estimate components for direct and spillover effects
@@ -146,11 +147,12 @@ networkGibbsOuts1Cpp <- function(cov_list, beta, p, a_fixed, dynamic_coef_vec, d
 #' for a Bayesian computation.
 #' @param average An indicator of whether to evaluate the causal effects as an average
 #' of the R iterations
+#' @param p_vec Izzie description
 #' @return A vector of length N containing the estimated value of psi for each person
 #'
 #'
 #' @export
-networkGibbsOuts2Cpp <- function(cov_list, beta, p, a_fixed, dynamic_coef_vec, dynamic_among_treated, dynamic_single_edge, ncov, R, N, adjacency, weights, treated_indicator, subset, treatment_value, burnin, average) {
-    .Call('_autognet_networkGibbsOuts2Cpp', PACKAGE = 'autognet', cov_list, beta, p, a_fixed, dynamic_coef_vec, dynamic_among_treated, dynamic_single_edge, ncov, R, N, adjacency, weights, treated_indicator, subset, treatment_value, burnin, average)
+networkGibbsOuts2Cpp <- function(cov_list, beta, p, a_fixed, dynamic_coef_vec, dynamic_among_treated, dynamic_single_edge, ncov, R, N, adjacency, weights, treated_indicator, subset, treatment_value, burnin, average, p_vec) {
+    .Call('_autognet_networkGibbsOuts2Cpp', PACKAGE = 'autognet', cov_list, beta, p, a_fixed, dynamic_coef_vec, dynamic_among_treated, dynamic_single_edge, ncov, R, N, adjacency, weights, treated_indicator, subset, treatment_value, burnin, average, p_vec)
 }
 

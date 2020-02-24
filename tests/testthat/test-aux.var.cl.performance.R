@@ -425,7 +425,7 @@ sapply(1:nIt, function(i){
                             weights = weights,
                             treated_indicator = c(0,0),
                             burnin = 0,
-                            average = 1))
+                            average = 1, p_vec = c(0.5, 0.5)))
 
 }) -> olist_cpp_out1
 end_time <- Sys.time()
@@ -468,7 +468,7 @@ sapply(1:nIt, function(i){
                             R = R, N = N, adjacency = adjacency, weights = weights,
                             treated_indicator = c(0,0),
                             subset = 1:length(adjacency), treatment_value = 0.5,
-                            burnin = 0, average = 1))
+                            burnin = 0, average = 1, p_vec = c(0.5, 0.5)))
 
 }) -> olist_cpp_out2
 end_time <- Sys.time()

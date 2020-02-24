@@ -10,13 +10,14 @@ agcEffect(mod, burnin = 1, thin = 0.5, treatment_allocation = 0.5,
   subset = 0, a_fixed = c(0), dynamic_coef_vec = c(0),
   dynamic_among_treated = 0, dynamic_single_edge = 0, R = 10,
   burnin_R = 10, burnin_cov = 10, average = TRUE,
-  index_override = 0, return_effects = 1)
+  index_override = 0, return_effects = 1, p_vec = c(0.5, 0.5))
 
 \S4method{agcEffect}{list}(mod, burnin = 1, thin = 0.2,
   treatment_allocation = 0.5, subset = 0, a_fixed = c(0),
   dynamic_coef_vec = c(0), dynamic_among_treated = 0,
   dynamic_single_edge = 0, R = 10, burnin_R = 10, burnin_cov = 10,
-  average = TRUE, index_override = 0, return_effects = 1)
+  average = TRUE, index_override = 0, return_effects = 1,
+  p_vec = c(0.5, 0.5))
 }
 \arguments{
 \item{mod}{An \code{agcParamClass} object from \code{agcParam}
@@ -65,6 +66,8 @@ thin parameters. Default = 0 (all iterations included).}
 \item{return_effects}{An indicator of whether to return direct and spillover effects
 or just the counterfactual expectations. Use the latter if you wish to construct overall
 effects or different types of spillover effects. Default = 1.}
+
+\item{p_vec}{Izzie to do}
 }
 \value{
 An S3 object of type \code{agcEffectClass} that contains essential

@@ -6,7 +6,7 @@
 \usage{
 networkGibbsOuts1Cpp(cov_list, beta, p, a_fixed, dynamic_coef_vec,
   dynamic_among_treated, dynamic_single_edge, ncov, R, N, adjacency,
-  weights, treated_indicator, burnin, average)
+  weights, treated_indicator, burnin, average, p_vec)
 }
 \arguments{
 \item{cov_list}{The output from networkGibbsOutCovCpp function}
@@ -40,6 +40,8 @@ for a Bayesian computation.}
 
 \item{average}{An indicator of whether to evaluate the causal effects as an average
 of the R iterations}
+
+\item{p_vec}{Izzie description}
 }
 \value{
 A vector of length N containing the estimated value of psi for each person

@@ -104,8 +104,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // networkGibbsOuts1Cpp
-NumericVector networkGibbsOuts1Cpp(List cov_list, NumericVector beta, float p, IntegerVector a_fixed, NumericVector dynamic_coef_vec, int dynamic_among_treated, int dynamic_single_edge, int ncov, int R, int N, List adjacency, IntegerVector weights, IntegerVector treated_indicator, int burnin, int average);
-RcppExport SEXP _autognet_networkGibbsOuts1Cpp(SEXP cov_listSEXP, SEXP betaSEXP, SEXP pSEXP, SEXP a_fixedSEXP, SEXP dynamic_coef_vecSEXP, SEXP dynamic_among_treatedSEXP, SEXP dynamic_single_edgeSEXP, SEXP ncovSEXP, SEXP RSEXP, SEXP NSEXP, SEXP adjacencySEXP, SEXP weightsSEXP, SEXP treated_indicatorSEXP, SEXP burninSEXP, SEXP averageSEXP) {
+NumericVector networkGibbsOuts1Cpp(List cov_list, NumericVector beta, float p, IntegerVector a_fixed, NumericVector dynamic_coef_vec, int dynamic_among_treated, int dynamic_single_edge, int ncov, int R, int N, List adjacency, IntegerVector weights, IntegerVector treated_indicator, int burnin, int average, NumericVector p_vec);
+RcppExport SEXP _autognet_networkGibbsOuts1Cpp(SEXP cov_listSEXP, SEXP betaSEXP, SEXP pSEXP, SEXP a_fixedSEXP, SEXP dynamic_coef_vecSEXP, SEXP dynamic_among_treatedSEXP, SEXP dynamic_single_edgeSEXP, SEXP ncovSEXP, SEXP RSEXP, SEXP NSEXP, SEXP adjacencySEXP, SEXP weightsSEXP, SEXP treated_indicatorSEXP, SEXP burninSEXP, SEXP averageSEXP, SEXP p_vecSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -124,13 +124,14 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< IntegerVector >::type treated_indicator(treated_indicatorSEXP);
     Rcpp::traits::input_parameter< int >::type burnin(burninSEXP);
     Rcpp::traits::input_parameter< int >::type average(averageSEXP);
-    rcpp_result_gen = Rcpp::wrap(networkGibbsOuts1Cpp(cov_list, beta, p, a_fixed, dynamic_coef_vec, dynamic_among_treated, dynamic_single_edge, ncov, R, N, adjacency, weights, treated_indicator, burnin, average));
+    Rcpp::traits::input_parameter< NumericVector >::type p_vec(p_vecSEXP);
+    rcpp_result_gen = Rcpp::wrap(networkGibbsOuts1Cpp(cov_list, beta, p, a_fixed, dynamic_coef_vec, dynamic_among_treated, dynamic_single_edge, ncov, R, N, adjacency, weights, treated_indicator, burnin, average, p_vec));
     return rcpp_result_gen;
 END_RCPP
 }
 // networkGibbsOuts2Cpp
-NumericVector networkGibbsOuts2Cpp(List cov_list, NumericVector beta, float p, IntegerVector a_fixed, NumericVector dynamic_coef_vec, int dynamic_among_treated, int dynamic_single_edge, int ncov, int R, int N, List adjacency, IntegerVector weights, IntegerVector treated_indicator, IntegerVector subset, float treatment_value, int burnin, int average);
-RcppExport SEXP _autognet_networkGibbsOuts2Cpp(SEXP cov_listSEXP, SEXP betaSEXP, SEXP pSEXP, SEXP a_fixedSEXP, SEXP dynamic_coef_vecSEXP, SEXP dynamic_among_treatedSEXP, SEXP dynamic_single_edgeSEXP, SEXP ncovSEXP, SEXP RSEXP, SEXP NSEXP, SEXP adjacencySEXP, SEXP weightsSEXP, SEXP treated_indicatorSEXP, SEXP subsetSEXP, SEXP treatment_valueSEXP, SEXP burninSEXP, SEXP averageSEXP) {
+NumericVector networkGibbsOuts2Cpp(List cov_list, NumericVector beta, float p, IntegerVector a_fixed, NumericVector dynamic_coef_vec, int dynamic_among_treated, int dynamic_single_edge, int ncov, int R, int N, List adjacency, IntegerVector weights, IntegerVector treated_indicator, IntegerVector subset, float treatment_value, int burnin, int average, NumericVector p_vec);
+RcppExport SEXP _autognet_networkGibbsOuts2Cpp(SEXP cov_listSEXP, SEXP betaSEXP, SEXP pSEXP, SEXP a_fixedSEXP, SEXP dynamic_coef_vecSEXP, SEXP dynamic_among_treatedSEXP, SEXP dynamic_single_edgeSEXP, SEXP ncovSEXP, SEXP RSEXP, SEXP NSEXP, SEXP adjacencySEXP, SEXP weightsSEXP, SEXP treated_indicatorSEXP, SEXP subsetSEXP, SEXP treatment_valueSEXP, SEXP burninSEXP, SEXP averageSEXP, SEXP p_vecSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -151,7 +152,8 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< float >::type treatment_value(treatment_valueSEXP);
     Rcpp::traits::input_parameter< int >::type burnin(burninSEXP);
     Rcpp::traits::input_parameter< int >::type average(averageSEXP);
-    rcpp_result_gen = Rcpp::wrap(networkGibbsOuts2Cpp(cov_list, beta, p, a_fixed, dynamic_coef_vec, dynamic_among_treated, dynamic_single_edge, ncov, R, N, adjacency, weights, treated_indicator, subset, treatment_value, burnin, average));
+    Rcpp::traits::input_parameter< NumericVector >::type p_vec(p_vecSEXP);
+    rcpp_result_gen = Rcpp::wrap(networkGibbsOuts2Cpp(cov_list, beta, p, a_fixed, dynamic_coef_vec, dynamic_among_treated, dynamic_single_edge, ncov, R, N, adjacency, weights, treated_indicator, subset, treatment_value, burnin, average, p_vec));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -163,8 +165,8 @@ static const R_CallMethodDef CallEntries[] = {
     {"_autognet_auxVarCpp", (DL_FUNC) &_autognet_auxVarCpp, 12},
     {"_autognet_auxVarOutcomeCpp", (DL_FUNC) &_autognet_auxVarOutcomeCpp, 8},
     {"_autognet_networkGibbsOutCovCpp", (DL_FUNC) &_autognet_networkGibbsOutCovCpp, 14},
-    {"_autognet_networkGibbsOuts1Cpp", (DL_FUNC) &_autognet_networkGibbsOuts1Cpp, 15},
-    {"_autognet_networkGibbsOuts2Cpp", (DL_FUNC) &_autognet_networkGibbsOuts2Cpp, 17},
+    {"_autognet_networkGibbsOuts1Cpp", (DL_FUNC) &_autognet_networkGibbsOuts1Cpp, 16},
+    {"_autognet_networkGibbsOuts2Cpp", (DL_FUNC) &_autognet_networkGibbsOuts2Cpp, 18},
     {NULL, NULL, 0}
 };
 
