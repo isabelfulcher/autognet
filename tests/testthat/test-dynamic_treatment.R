@@ -24,5 +24,8 @@ set.seed(1)
 dyn_effect_dat <- agcEffect(mod_1chain, subset = which(data$treatment == 1),
                             dynamic_single_edge = 2,
                             dynamic_among_treated = 1)
-
+set.seed(1)
+dyn_effect_dat_oo <- agcEffect(mod_1chain, subset = which(data$treatment == 1),
+                            dynamic_single_edge = 2,
+                            dynamic_among_treated = 1, overall_effects_only = 1)
 

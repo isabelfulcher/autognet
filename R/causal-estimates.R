@@ -56,6 +56,8 @@ NULL
 #' or just the counterfactual expectations. Use the latter if you wish to construct overall
 #' effects or different types of spillover effects. Default = 1.
 #'
+#' @param overall_effects_only An indicator of whether to return overall effects only.
+#'
 #' @param p_vec Izzie to do
 #'
 #' @return An S3 object of type \code{agcEffectClass} that contains essential
@@ -83,15 +85,15 @@ setGeneric(name = "agcEffect",
            def = function(mod, burnin = 1, thin = 0.5, treatment_allocation = 0.5, subset = 0,
                           a_fixed = c(0), dynamic_coef_vec = c(0), dynamic_among_treated = 0, dynamic_single_edge = 0,
                           R = 10, burnin_R = 10, burnin_cov = 10, average = TRUE, index_override = 0,
-                          return_effects = 1, p_vec = c(0.5,0.5))
+                          return_effects = 1, overall_effects_only=0, p_vec = c(0.5,0.5))
              standardGeneric("agcEffect"))
 
 #' @rdname agcEffect
-setMethod("agcEffect", signature("list", "ANY", "ANY", "ANY", "ANY", "ANY", "ANY", "ANY", "ANY", "ANY", "ANY", "ANY", "ANY", "ANY", "ANY"),
+setMethod("agcEffect", signature("list", "ANY", "ANY", "ANY", "ANY", "ANY", "ANY", "ANY", "ANY", "ANY", "ANY", "ANY", "ANY", "ANY", "ANY","ANY"),
           definition = function(mod, burnin = 1, thin = 0.2, treatment_allocation = 0.5, subset = 0,
                                 a_fixed = c(0), dynamic_coef_vec = c(0), dynamic_among_treated = 0, dynamic_single_edge = 0,
                                 R = 10, burnin_R = 10, burnin_cov = 10, average = TRUE, index_override = 0,
-                                return_effects = 1, p_vec = c(0.5,0.5)){
+                                return_effects = 1, overall_effects_only=0, p_vec = c(0.5,0.5)){
 
             stopifnot(treatment_allocation >= 0 & treatment_allocation <= 1)
             stopifnot(return_effects == 0 | return_effects == 1)
@@ -215,23 +217,32 @@ setMethod("agcEffect", signature("list", "ANY", "ANY", "ANY", "ANY", "ANY", "ANY
                                                    adjacency = adjacency, weights = weights, treated_indicator = treated_indicator,
                                                    burnin = burnin_R, average = as.numeric(average), p_vec = p_vec)[subset])
 
-              psi_1_gamma <- mean(networkGibbsOuts2Cpp(cov_list = cov.list, beta = beta[b,], p = treatment_allocation,
-                                                       a_fixed = a_fixed,  dynamic_coef_vec = dynamic_coef_vec,
-                                                       dynamic_among_treated = dynamic_among_treated, dynamic_single_edge = dynamic_single_edge,
-                                                       ncov = ncov, R = R + burnin_R, N = N,   # have to do R + burnin for weird C++ error
-                                                       adjacency = adjacency, weights = weights, treated_indicator = treated_indicator,
-                                                       subset = subset,
-                                                       treatment_value = 1.0,
-                                                       burnin = burnin_R, average = as.numeric(average), p_vec = p_vec))
+              if(overall_effects_only == 0){
+                psi_1_gamma <- mean(networkGibbsOuts2Cpp(cov_list = cov.list, beta = beta[b,], p = treatment_allocation,
+                                                         a_fixed = a_fixed,  dynamic_coef_vec = dynamic_coef_vec,
+                                                         dynamic_among_treated = dynamic_among_treated, dynamic_single_edge = dynamic_single_edge,
+                                                         ncov = ncov, R = R + burnin_R, N = N,   # have to do R + burnin for weird C++ error
+                                                         adjacency = adjacency, weights = weights, treated_indicator = treated_indicator,
+                                                         subset = subset,
+                                                         treatment_value = 1.0,
+                                                         burnin = burnin_R, average = as.numeric(average), p_vec = p_vec))
 
-              psi_0_gamma <- mean(networkGibbsOuts2Cpp(cov_list = cov.list, beta = beta[b,], p = treatment_allocation,
-                                                       a_fixed = a_fixed,  dynamic_coef_vec = dynamic_coef_vec,
-                                                       dynamic_among_treated = dynamic_among_treated, dynamic_single_edge = dynamic_single_edge,
-                                                       ncov = ncov, R = R + burnin_R, N = N,   # have to do R + burnin for weird C++ error
-                                                       adjacency = adjacency, weights = weights, treated_indicator = treated_indicator,
-                                                       subset = subset,
-                                                       treatment_value = 0,
-                                                       burnin = burnin_R, average = as.numeric(average), p_vec = p_vec))
+                psi_0_gamma <- mean(networkGibbsOuts2Cpp(cov_list = cov.list, beta = beta[b,], p = treatment_allocation,
+                                                         a_fixed = a_fixed,  dynamic_coef_vec = dynamic_coef_vec,
+                                                         dynamic_among_treated = dynamic_among_treated, dynamic_single_edge = dynamic_single_edge,
+                                                         ncov = ncov, R = R + burnin_R, N = N,   # have to do R + burnin for weird C++ error
+                                                         adjacency = adjacency, weights = weights, treated_indicator = treated_indicator,
+                                                         subset = subset,
+                                                         treatment_value = 0,
+                                                         burnin = burnin_R, average = as.numeric(average), p_vec = p_vec))
+
+              } else {
+
+                psi_1_gamma <- NA
+                psi_0_gamma <- NA
+
+              }
+
 
               if (return_effects == 1){
                 return <- c(psi_gamma, psi_1_gamma - psi_0_gamma, psi_0_gamma - psi_zero)
