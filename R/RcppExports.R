@@ -100,7 +100,6 @@ networkGibbsOutCovCpp <- function(tau, rho, nu, ncov, R, N, burnin, rho_mat, adj
 #' @param p A probability of treated units for the binomial treatment assignment draw
 #' @param a_fixed Izzie to update
 #' @param dynamic_coef_vec Izzie to update
-#' @param dynamic_among_treated Izzie to update
 #' @param dynamic_single_edge Izzie to update
 #' @param ncov An integer for the parameters from the outcome model
 #' @param R An integer indicating the number of iterations for the Gibbs
@@ -116,8 +115,8 @@ networkGibbsOutCovCpp <- function(tau, rho, nu, ncov, R, N, burnin, rho_mat, adj
 #' @return A vector of length N containing the estimated value of psi for each person
 #'
 #' @export
-networkGibbsOuts1Cpp <- function(cov_list, beta, p, a_fixed, dynamic_coef_vec, dynamic_among_treated, dynamic_single_edge, ncov, R, N, adjacency, weights, treated_indicator, burnin, average, p_vec) {
-    .Call('_autognet_networkGibbsOuts1Cpp', PACKAGE = 'autognet', cov_list, beta, p, a_fixed, dynamic_coef_vec, dynamic_among_treated, dynamic_single_edge, ncov, R, N, adjacency, weights, treated_indicator, burnin, average, p_vec)
+networkGibbsOuts1Cpp <- function(cov_list, beta, p, a_fixed, dynamic_coef_vec, dynamic_single_edge, ncov, R, N, adjacency, weights, treated_indicator, burnin, average, p_vec) {
+    .Call('_autognet_networkGibbsOuts1Cpp', PACKAGE = 'autognet', cov_list, beta, p, a_fixed, dynamic_coef_vec, dynamic_single_edge, ncov, R, N, adjacency, weights, treated_indicator, burnin, average, p_vec)
 }
 
 #' Estimate components for direct and spillover effects
@@ -131,7 +130,6 @@ networkGibbsOuts1Cpp <- function(cov_list, beta, p, a_fixed, dynamic_coef_vec, d
 #' @param p A probability of treated units for the binomial treatment assignment draw
 #' @param a_fixed Izzie to update
 #' @param dynamic_coef_vec Izzie to update
-#' @param dynamic_among_treated Izzie to update
 #' @param dynamic_single_edge Izzie to update
 #' @param ncov A numeric vector for the parameters from the outcome model
 #' @param R An integer indicating the number of iterations for the Gibbs
@@ -152,7 +150,7 @@ networkGibbsOuts1Cpp <- function(cov_list, beta, p, a_fixed, dynamic_coef_vec, d
 #'
 #'
 #' @export
-networkGibbsOuts2Cpp <- function(cov_list, beta, p, a_fixed, dynamic_coef_vec, dynamic_among_treated, dynamic_single_edge, ncov, R, N, adjacency, weights, treated_indicator, subset, treatment_value, burnin, average, p_vec) {
-    .Call('_autognet_networkGibbsOuts2Cpp', PACKAGE = 'autognet', cov_list, beta, p, a_fixed, dynamic_coef_vec, dynamic_among_treated, dynamic_single_edge, ncov, R, N, adjacency, weights, treated_indicator, subset, treatment_value, burnin, average, p_vec)
+networkGibbsOuts2Cpp <- function(cov_list, beta, p, a_fixed, dynamic_coef_vec, dynamic_single_edge, ncov, R, N, adjacency, weights, treated_indicator, subset, treatment_value, burnin, average, p_vec) {
+    .Call('_autognet_networkGibbsOuts2Cpp', PACKAGE = 'autognet', cov_list, beta, p, a_fixed, dynamic_coef_vec, dynamic_single_edge, ncov, R, N, adjacency, weights, treated_indicator, subset, treatment_value, burnin, average, p_vec)
 }
 

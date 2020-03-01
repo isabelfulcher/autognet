@@ -8,17 +8,16 @@
 \usage{
 agcEffect(mod, burnin = 1, thin = 0.5, treatment_allocation = 0.5,
   subset = 0, a_fixed = c(0), dynamic_coef_vec = c(0),
-  dynamic_among_treated = 0, dynamic_single_edge = 0, R = 10,
-  burnin_R = 10, burnin_cov = 10, average = TRUE,
-  index_override = 0, return_effects = 1, overall_effects_only = 0,
-  p_vec = c(0.5, 0.5))
-
-\S4method{agcEffect}{list}(mod, burnin = 1, thin = 0.2,
-  treatment_allocation = 0.5, subset = 0, a_fixed = c(0),
-  dynamic_coef_vec = c(0), dynamic_among_treated = 0,
   dynamic_single_edge = 0, R = 10, burnin_R = 10, burnin_cov = 10,
   average = TRUE, index_override = 0, return_effects = 1,
   overall_effects_only = 0, p_vec = c(0.5, 0.5))
+
+\S4method{agcEffect}{list}(mod, burnin = 1, thin = 0.2,
+  treatment_allocation = 0.5, subset = 0, a_fixed = c(0),
+  dynamic_coef_vec = c(0), dynamic_single_edge = 0, R = 10,
+  burnin_R = 10, burnin_cov = 10, average = TRUE,
+  index_override = 0, return_effects = 1, overall_effects_only = 0,
+  p_vec = c(0.5, 0.5))
 }
 \arguments{
 \item{mod}{An \code{agcParamClass} object from \code{agcParam}
@@ -39,12 +38,9 @@ in the network to receive the treatment. Should be a number between
 adjacency matrix, to be included in the network causal effects estimates.
 Default = 0 (include everyone).}
 
-\item{a_fixed}{Izzie to Update
-#'}
+\item{a_fixed}{Izzie to Update}
 
 \item{dynamic_coef_vec}{Izzie to Update}
-
-\item{dynamic_among_treated}{Izzie to Update}
 
 \item{dynamic_single_edge}{Izzie to Update}
 

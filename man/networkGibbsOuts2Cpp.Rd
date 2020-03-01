@@ -5,9 +5,8 @@
 \title{Estimate components for direct and spillover effects}
 \usage{
 networkGibbsOuts2Cpp(cov_list, beta, p, a_fixed, dynamic_coef_vec,
-  dynamic_among_treated, dynamic_single_edge, ncov, R, N, adjacency,
-  weights, treated_indicator, subset, treatment_value, burnin, average,
-  p_vec)
+  dynamic_single_edge, ncov, R, N, adjacency, weights, treated_indicator,
+  subset, treatment_value, burnin, average, p_vec)
 }
 \arguments{
 \item{cov_list}{The output from networkGibbsOutCovCpp function}
@@ -19,8 +18,6 @@ networkGibbsOuts2Cpp(cov_list, beta, p, a_fixed, dynamic_coef_vec,
 \item{a_fixed}{Izzie to update}
 
 \item{dynamic_coef_vec}{Izzie to update}
-
-\item{dynamic_among_treated}{Izzie to update}
 
 \item{dynamic_single_edge}{Izzie to update}
 

@@ -5,8 +5,8 @@
 \title{Estimate overall network causal effect}
 \usage{
 networkGibbsOuts1Cpp(cov_list, beta, p, a_fixed, dynamic_coef_vec,
-  dynamic_among_treated, dynamic_single_edge, ncov, R, N, adjacency,
-  weights, treated_indicator, burnin, average, p_vec)
+  dynamic_single_edge, ncov, R, N, adjacency, weights, treated_indicator,
+  burnin, average, p_vec)
 }
 \arguments{
 \item{cov_list}{The output from networkGibbsOutCovCpp function}
@@ -18,8 +18,6 @@ networkGibbsOuts1Cpp(cov_list, beta, p, a_fixed, dynamic_coef_vec,
 \item{a_fixed}{Izzie to update}
 
 \item{dynamic_coef_vec}{Izzie to update}
-
-\item{dynamic_among_treated}{Izzie to update}
 
 \item{dynamic_single_edge}{Izzie to update}
 

@@ -385,7 +385,6 @@ List networkGibbsOutCovCpp (NumericVector tau, NumericVector rho, NumericMatrix 
 //' @param p A probability of treated units for the binomial treatment assignment draw
 //' @param a_fixed Izzie to update
 //' @param dynamic_coef_vec Izzie to update
-//' @param dynamic_among_treated Izzie to update
 //' @param dynamic_single_edge Izzie to update
 //' @param ncov An integer for the parameters from the outcome model
 //' @param R An integer indicating the number of iterations for the Gibbs
@@ -404,7 +403,7 @@ List networkGibbsOutCovCpp (NumericVector tau, NumericVector rho, NumericMatrix 
 // [[Rcpp::export]]
 NumericVector networkGibbsOuts1Cpp (List cov_list, NumericVector beta, float p,
                                     IntegerVector a_fixed, NumericVector dynamic_coef_vec,
-                                    int dynamic_among_treated, int dynamic_single_edge,
+                                    int dynamic_single_edge,
                                     int ncov, int R, int N,  List adjacency, IntegerVector weights,
                                     IntegerVector treated_indicator,
                                     int burnin, int average, NumericVector p_vec){
@@ -456,16 +455,6 @@ NumericVector networkGibbsOuts1Cpp (List cov_list, NumericVector beta, float p,
         // Safety; no regression TO UPDATE with opposite of above in the if statement
         if(dynamic_single_edge < 0 && length_a_fixed != N){
           a_bar[i] = rcpp_rbinom_one(p);
-        }
-
-        // Potentially update if dynamic among treated
-        if(dynamic_among_treated == 1){
-          int treated_i = treated_indicator[i];
-
-          // Force the untreated to be zero
-          if(treated_i == 0){
-            a_bar[i] = 0;
-          }
         }
 
         // Generate Y given A, L
@@ -572,7 +561,6 @@ NumericVector networkGibbsOuts1Cpp (List cov_list, NumericVector beta, float p,
 //' @param p A probability of treated units for the binomial treatment assignment draw
 //' @param a_fixed Izzie to update
 //' @param dynamic_coef_vec Izzie to update
-//' @param dynamic_among_treated Izzie to update
 //' @param dynamic_single_edge Izzie to update
 //' @param ncov A numeric vector for the parameters from the outcome model
 //' @param R An integer indicating the number of iterations for the Gibbs
@@ -596,7 +584,7 @@ NumericVector networkGibbsOuts1Cpp (List cov_list, NumericVector beta, float p,
 // [[Rcpp::export]]
 NumericVector networkGibbsOuts2Cpp (List cov_list, NumericVector beta, float p,
                                     IntegerVector a_fixed, NumericVector dynamic_coef_vec,
-                                    int dynamic_among_treated, int dynamic_single_edge,
+                                    int dynamic_single_edge,
                                     int ncov, int R, int N,
                                     List adjacency, IntegerVector weights,
                                     IntegerVector treated_indicator, IntegerVector subset,
@@ -657,18 +645,6 @@ NumericVector networkGibbsOuts2Cpp (List cov_list, NumericVector beta, float p,
         if(dynamic_single_edge < 0 && length_a_fixed != N){
           a_bar[i] = rcpp_rbinom_one(p);
           // Rcout << "Doing the safety";
-        }
-
-        // Potentially update if dynamic among treated
-        if(dynamic_among_treated == 1){
-          // Rcout << "Running dynamic_among_treated";
-
-          int treated_i = treated_indicator[i];
-
-          // Force the untreated to be zero
-          if(treated_i == 0){
-            a_bar[i] = 0;
-          }
         }
 
 
