@@ -5,14 +5,14 @@
 \title{Run Gibbs sampler for covariates to use in network causal effect estimation}
 \usage{
 networkGibbsOutCovCpp(tau, rho, nu, ncov, R, N, burnin, rho_mat, adjacency,
-  weights, cov_mat, group_lengths, group_functions)
+  weights, cov_mat, group_lengths, group_functions, additional_nu)
 }
 \arguments{
 \item{tau}{A numeric vector for the intercept terms in the covariate model}
 
 \item{rho}{A numeric vector for the correlation terms in the covariate model}
 
-\item{nu}{A numberic vector for the neighbor terms in the covariate model}
+\item{nu}{A numberic matrix for the neighbor terms in the covariate model}
 
 \item{ncov}{An integer for the number of covariates}
 
@@ -33,6 +33,8 @@ networkGibbsOutCovCpp(tau, rho, nu, ncov, R, N, burnin, rho_mat, adjacency,
 \item{group_lengths}{An integer vector indicating the number of categories for each variable}
 
 \item{group_functions}{An integer vector indicating the type of variable}
+
+\item{additional_nu}{An integer (0/1) specifying whether neighbor cross terms will be evaluated (i.e. non-zero)}
 }
 \value{
 A list of numeric matrices that contain the covariate values and neighbor covariate

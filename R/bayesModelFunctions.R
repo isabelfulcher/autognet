@@ -97,7 +97,7 @@ aux.var.outcome.cl <- function(beta,trt,cov,N,R,adjacency,start,weights){
 
 #This will generate an array of covariates to use in the next functions
 network.gibbs.cov <-  function(tau, rho, nu, ncov, R, N, burnin, adjacency, weights,
-                               group_lengths, group_functions){
+                               group_lengths, group_functions, return_probs = FALSE, start){
 
   # tau is a vector of length ncov
   # rho is a vector of lenth choose(ncov,2)
@@ -115,7 +115,8 @@ network.gibbs.cov <-  function(tau, rho, nu, ncov, R, N, burnin, adjacency, weig
 
   #storage
   cov.save <- list()
-  cov_mat <- matrix(rbinom(N*J, 1, runif(J,.1,.9)),N,J)
+  cov_mat <- start
+  #cov_mat <- matrix(rbinom(N*J, 1, runif(J,.1,.9)),N,J)
   cov_mat_save <- matrix(NA,N,2*J) #OLD V: erase this
 
   #Make symmetric matrix of the rho values (needed for covariate iterations)
@@ -155,7 +156,13 @@ network.gibbs.cov <-  function(tau, rho, nu, ncov, R, N, burnin, adjacency, weig
 
             # Logistic / binary case
             prob_Lj <- plogis(tau[j] + sum(rho_mat[,j]*cov_mat[i,]) + nu[j]*sum(cov_mat[adjacency[[i]],j]/weights[i]))
-            cov_mat[i,j] <- rbinom(1,1,prob_Lj)
+
+            if(return_probs){
+              cov_mat[i,j] <- prob_Lj
+            } else {
+              cov_mat[i,j] <- rbinom(1,1,prob_Lj)
+            }
+
           } # add in normal here once form is decide
 
           j <- j + group_length

@@ -114,6 +114,17 @@ setMethod("agcEffect", signature("list", "ANY", "ANY", "ANY", "ANY", "ANY", "ANY
             L <- ncov*2 + nrho
             N <- nrow(adjmat)
 
+            # Modify fake data to test nu off diagonal terms
+            if(FALSE){
+              alpha <- cbind(alpha, rnorm(11,0, 0.1), rnorm(11,0, 0.1))
+              colnames(alpha)[4:7] <- c("new_11", "new_22","new_12", "new_21")
+              alpha <- alpha[,c(1,2,3,4,6,5,7)]
+            }
+
+            if(ncol(alpha) > L){
+                L <- ncov + nrho + ncov^2
+            }
+
             # Establish a C++-friendly adjacency list
             adjacency <- list(NA)
             for (i in 1:N){
@@ -140,6 +151,17 @@ setMethod("agcEffect", signature("list", "ANY", "ANY", "ANY", "ANY", "ANY", "ANY
               tau <- alpha[b,1:ncov]
               rho <- alpha[b,(ncov+1):(ncov+nrho)]
               nu  <- alpha[b,(ncov+nrho+1):L]
+
+              # Reformat to matrix for off-diagonal nu terms
+              if(length(nu) == ncov){
+                nu_mat <- diag(nu)
+                additional_nu <- 0
+              } else {
+                nu_mat <- matrix(nu, nrow = ncov, byrow = TRUE)
+                additional_nu <- 1
+              }
+              nu <- nu_mat
+
               rho_mat <- matrix(0, nrow = ncov, ncol = ncov)
               rho_mat[lower.tri(rho_mat, diag=FALSE)] <- rho; rho_mat <- rho_mat + t(rho_mat)
 
@@ -152,7 +174,7 @@ setMethod("agcEffect", signature("list", "ANY", "ANY", "ANY", "ANY", "ANY", "ANY
               cov.list <- networkGibbsOutCovCpp(tau, rho, nu,
                                                 ncov, R + burnin_R, N, burnin_cov, rho_mat,
                                                 adjacency, weights, cov_mat,
-                                                group_lengths, group_functions)
+                                                group_lengths, group_functions, additional_nu)
 
               ## NON-INDIVIDUAL GIBBS (overall effects) ##
               psi_gamma <-mean(networkGibbsOuts1Cpp(cov_list = cov.list, beta = beta[b,], p = treatment_allocation,

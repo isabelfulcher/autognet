@@ -80,14 +80,14 @@ BEGIN_RCPP
 END_RCPP
 }
 // networkGibbsOutCovCpp
-List networkGibbsOutCovCpp(NumericVector tau, NumericVector rho, NumericVector nu, int ncov, int R, int N, int burnin, NumericMatrix rho_mat, List adjacency, IntegerVector weights, arma::mat cov_mat, IntegerVector group_lengths, IntegerVector group_functions);
-RcppExport SEXP _autognet_networkGibbsOutCovCpp(SEXP tauSEXP, SEXP rhoSEXP, SEXP nuSEXP, SEXP ncovSEXP, SEXP RSEXP, SEXP NSEXP, SEXP burninSEXP, SEXP rho_matSEXP, SEXP adjacencySEXP, SEXP weightsSEXP, SEXP cov_matSEXP, SEXP group_lengthsSEXP, SEXP group_functionsSEXP) {
+List networkGibbsOutCovCpp(NumericVector tau, NumericVector rho, NumericMatrix nu, int ncov, int R, int N, int burnin, NumericMatrix rho_mat, List adjacency, IntegerVector weights, arma::mat cov_mat, IntegerVector group_lengths, IntegerVector group_functions, int additional_nu);
+RcppExport SEXP _autognet_networkGibbsOutCovCpp(SEXP tauSEXP, SEXP rhoSEXP, SEXP nuSEXP, SEXP ncovSEXP, SEXP RSEXP, SEXP NSEXP, SEXP burninSEXP, SEXP rho_matSEXP, SEXP adjacencySEXP, SEXP weightsSEXP, SEXP cov_matSEXP, SEXP group_lengthsSEXP, SEXP group_functionsSEXP, SEXP additional_nuSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< NumericVector >::type tau(tauSEXP);
     Rcpp::traits::input_parameter< NumericVector >::type rho(rhoSEXP);
-    Rcpp::traits::input_parameter< NumericVector >::type nu(nuSEXP);
+    Rcpp::traits::input_parameter< NumericMatrix >::type nu(nuSEXP);
     Rcpp::traits::input_parameter< int >::type ncov(ncovSEXP);
     Rcpp::traits::input_parameter< int >::type R(RSEXP);
     Rcpp::traits::input_parameter< int >::type N(NSEXP);
@@ -98,7 +98,8 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< arma::mat >::type cov_mat(cov_matSEXP);
     Rcpp::traits::input_parameter< IntegerVector >::type group_lengths(group_lengthsSEXP);
     Rcpp::traits::input_parameter< IntegerVector >::type group_functions(group_functionsSEXP);
-    rcpp_result_gen = Rcpp::wrap(networkGibbsOutCovCpp(tau, rho, nu, ncov, R, N, burnin, rho_mat, adjacency, weights, cov_mat, group_lengths, group_functions));
+    Rcpp::traits::input_parameter< int >::type additional_nu(additional_nuSEXP);
+    rcpp_result_gen = Rcpp::wrap(networkGibbsOutCovCpp(tau, rho, nu, ncov, R, N, burnin, rho_mat, adjacency, weights, cov_mat, group_lengths, group_functions, additional_nu));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -151,7 +152,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_autognet_callRMultinom", (DL_FUNC) &_autognet_callRMultinom, 1},
     {"_autognet_auxVarCpp", (DL_FUNC) &_autognet_auxVarCpp, 12},
     {"_autognet_auxVarOutcomeCpp", (DL_FUNC) &_autognet_auxVarOutcomeCpp, 8},
-    {"_autognet_networkGibbsOutCovCpp", (DL_FUNC) &_autognet_networkGibbsOutCovCpp, 13},
+    {"_autognet_networkGibbsOutCovCpp", (DL_FUNC) &_autognet_networkGibbsOutCovCpp, 14},
     {"_autognet_networkGibbsOuts1Cpp", (DL_FUNC) &_autognet_networkGibbsOuts1Cpp, 10},
     {"_autognet_networkGibbsOuts2Cpp", (DL_FUNC) &_autognet_networkGibbsOuts2Cpp, 12},
     {NULL, NULL, 0}
