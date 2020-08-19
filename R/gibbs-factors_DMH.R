@@ -61,6 +61,9 @@ NULL
 #' the paper will be used. If 0, an improper prior (i.e. proportional to 1) will
 #' be used. Default is 1.
 #'
+#' @param additional_nu An integer (0/1) specifying whether neighbor
+#' cross terms will be evaluated (i.e. non zero)
+#'
 #' @return An S3 object of type \code{agcParamClass} that contains essential
 #' values for the covariate model.
 #'
@@ -89,17 +92,18 @@ setGeneric(name = "agcParam",
            def = function(data, treatment, outcome, adjmat,
                           B = 25000, R = 10, seed = 1,
                           scale.alpha=.005,scale.beta=.005,
-                          prior.alpha=1,prior.beta=1)
+                          prior.alpha=1,prior.beta=1,
+                          additional_nu = FALSE)
 
              standardGeneric("agcParam"))
 
 #' @rdname agcParam
 setMethod("agcParam", signature("data.frame", "character", "character", "ANY",
-                                "ANY", "ANY", "ANY", "ANY", "ANY", "ANY"),
+                                "ANY", "ANY", "ANY", "ANY", "ANY", "ANY", "ANY"),
           definition = function(data, treatment, outcome, adjmat,
                                 B, R, seed,
                                 scale.alpha,scale.beta,
-                                prior.alpha,prior.beta){
+                                prior.alpha,prior.beta, additional_nu){
 
             "%ni%" <- Negate("%in%")
 
@@ -143,6 +147,12 @@ setMethod("agcParam", signature("data.frame", "character", "character", "ANY",
 
             data <- cbind(outcome_vec, treatment_vec, covariate) # final dataframe
 
+            # Stopping condition
+            any_multinomal_variables <- !(all(group_functions==1))
+            if(any_multinomal_variables & additional_nu){
+              stop("Error: additional nu's with a multinomal variable is not a supported use case.")
+            }
+
             # create a new dataframe of indep persons (i.e. no neighbors)
             weights <- apply(adjmat,1,sum) # number of neighbors for everyone
             data.indep <- data[weights==0,] # independent data
@@ -162,7 +172,7 @@ setMethod("agcParam", signature("data.frame", "character", "character", "ANY",
             #Parameters
             ncov <- ncol(data)-2 #number of covariates / confounders
             nrho <- choose(ncov,2) #number of rho terms in covariate model
-            L <- ncov*2 + nrho #number of params in covariate model
+            L <- ncov*2 + nrho + (ncov^2 - ncov)*as.numeric(additional_nu) #number of params in covariate model
             P <- 2 + 2 + ncov*2 #number of params in outcome model
 
             # Adjust the scaling of the variances
@@ -193,12 +203,26 @@ setMethod("agcParam", signature("data.frame", "character", "character", "ANY",
               char <- paste(pair, collapse = "_")
               as.numeric(char %ni% zero_pairs)
             })
-            use_rho_all <- c(rep(1,ncov),use_rho,rep(1,ncov))
+
+            if(additional_nu){
+              use_rho_all <- 1 # because we do not allow categorial AND additional_nu, this is trivial
+            } else {
+              use_rho_all <- c(rep(1,ncov), use_rho, rep(1,ncov))
+
+            }
 
             ##interconnected units
+            if(additional_nu){
+              # Transpose the product to get the desired order
+              # See as.vector(t(matrix(c(1,2,3,4,5,6,7,8,9),ncol = 3, byrow = TRUE)))
+              third_term <- as.vector(t(t(cov.i) %*% cov.n))
+            } else {
+              third_term <- unname(colSums(cov.i*cov.n))
+            }
+
             sum.l <- c(unname(colSums(cov.i)),
                        unname(colSums(cov.i[,grid[,1], drop = FALSE] * cov.i[,grid[,2], drop = FALSE]))*use_rho,
-                       unname(colSums(cov.i*cov.n)))
+                       third_term)
 
             ##independent units
             sum.l.indep <- c(unname(colSums(cov.ind)),
@@ -258,6 +282,7 @@ setMethod("agcParam", signature("data.frame", "character", "character", "ANY",
             for (b in 1:B){
               #Step 0. Starting values
               if (b==1) {
+
                 alpha[b,] <- MASS::mvrnorm(1,rep(0,L),1*diag(L))
                 beta[b,] <- MASS::mvrnorm(1,rep(0,P),1*diag(P))
               }
@@ -271,21 +296,36 @@ setMethod("agcParam", signature("data.frame", "character", "character", "ANY",
               rho.p <- alpha.p[(ncov+1):(ncov+nrho)]
               nu.p <- alpha.p[(ncov+nrho+1):L]
 
+              # Make into a matrix for nu to handle off diag terms
+              if(additional_nu){
+                nu.p.mat <- matrix(nu.p, nrow = ncov, byrow = TRUE)
+              } else {
+                nu.p.mat <- diag(nu.p)
+              }
+
               # Make symmetrical matrix of the rho values
               rho_mat <- matrix(0, nrow = J, ncol = J)
               rho_mat[lower.tri(rho_mat, diag=FALSE)] <- rho.p; rho_mat <- rho_mat + t(rho_mat)
 
               # First call to Cpp function
-              aux.p.mat <- auxVarCpp(tau.p,rho.p,nu.p,N,R,J, rho_mat,
-                                     adjacency,cov.i,weights,group_lengths,group_functions)
+              aux.p.mat <- auxVarCpp(tau.p, rho.p, nu.p.mat, N, R, J, rho_mat,
+                                     adjacency,cov.i,weights,group_lengths,group_functions,
+                                     as.numeric(additional_nu))
 
               aux.p.cov.n <- apply(aux.p.mat,2,function(x) {(adjmat%*%x)/weights})
+
+              if(additional_nu){
+                third_term_sap <- as.vector(t(t(aux.p.mat) %*% aux.p.cov.n))
+              } else {
+                third_term_sap <- unname(colSums(aux.p.mat*aux.p.cov.n))
+              }
               sum.aux.p <- c(unname(colSums(aux.p.mat)),
                              unname(colSums(aux.p.mat[,grid[,1, drop = FALSE], drop = FALSE] * aux.p.mat[,grid[,2, drop = FALSE], drop = FALSE]))*use_rho,
-                             unname(colSums(aux.p.mat*aux.p.cov.n)))
+                             third_term_sap)
 
               #Step 3. Calculate accept-reject ratio (everything is log-ed!)
               #interconnected units
+
               h.l1.p <- alpha.p%*%sum.l
               h.l1.c <- alpha[b,]%*%sum.l
               h.aux.p <- alpha.p%*%sum.aux.p
@@ -371,8 +411,13 @@ setMethod("agcParam", signature("data.frame", "character", "character", "ANY",
             }
 
             #save labels
+            if(additional_nu){
+              indices_go <- apply(expand.grid(1:ncov,1:ncov)[,c(2,1)], 1, paste, collapse = "_")
+            } else {
+              indices_go <- as.character(1:ncov)
+            }
             rho.terms <- apply(grid, 1, function(pair){char <- paste(pair, collapse = "_")})
-            cov.lab <- c(colnames(covariate),rho.terms,paste("neighbors",colnames(covariate)))
+            cov.lab <- c(colnames(covariate),rho.terms,paste0("neighbors_", indices_go))
             outcome.lab <- c(colnames(data[,1:2]),colnames(covariate),
                              paste("neighbors",colnames(data[,1:2])),
                              paste("neighbors",colnames(covariate)))

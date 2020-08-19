@@ -40,14 +40,14 @@ BEGIN_RCPP
 END_RCPP
 }
 // auxVarCpp
-arma::mat auxVarCpp(NumericVector tau, NumericVector rho, NumericVector nu, int N, int R, int J, NumericMatrix rho_mat, List adjacency, arma::mat cov_i, IntegerVector weights, IntegerVector group_lengths, IntegerVector group_functions);
-RcppExport SEXP _autognet_auxVarCpp(SEXP tauSEXP, SEXP rhoSEXP, SEXP nuSEXP, SEXP NSEXP, SEXP RSEXP, SEXP JSEXP, SEXP rho_matSEXP, SEXP adjacencySEXP, SEXP cov_iSEXP, SEXP weightsSEXP, SEXP group_lengthsSEXP, SEXP group_functionsSEXP) {
+arma::mat auxVarCpp(NumericVector tau, NumericVector rho, NumericMatrix nu, int N, int R, int J, NumericMatrix rho_mat, List adjacency, arma::mat cov_i, IntegerVector weights, IntegerVector group_lengths, IntegerVector group_functions, int additional_nu);
+RcppExport SEXP _autognet_auxVarCpp(SEXP tauSEXP, SEXP rhoSEXP, SEXP nuSEXP, SEXP NSEXP, SEXP RSEXP, SEXP JSEXP, SEXP rho_matSEXP, SEXP adjacencySEXP, SEXP cov_iSEXP, SEXP weightsSEXP, SEXP group_lengthsSEXP, SEXP group_functionsSEXP, SEXP additional_nuSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< NumericVector >::type tau(tauSEXP);
     Rcpp::traits::input_parameter< NumericVector >::type rho(rhoSEXP);
-    Rcpp::traits::input_parameter< NumericVector >::type nu(nuSEXP);
+    Rcpp::traits::input_parameter< NumericMatrix >::type nu(nuSEXP);
     Rcpp::traits::input_parameter< int >::type N(NSEXP);
     Rcpp::traits::input_parameter< int >::type R(RSEXP);
     Rcpp::traits::input_parameter< int >::type J(JSEXP);
@@ -57,7 +57,8 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< IntegerVector >::type weights(weightsSEXP);
     Rcpp::traits::input_parameter< IntegerVector >::type group_lengths(group_lengthsSEXP);
     Rcpp::traits::input_parameter< IntegerVector >::type group_functions(group_functionsSEXP);
-    rcpp_result_gen = Rcpp::wrap(auxVarCpp(tau, rho, nu, N, R, J, rho_mat, adjacency, cov_i, weights, group_lengths, group_functions));
+    Rcpp::traits::input_parameter< int >::type additional_nu(additional_nuSEXP);
+    rcpp_result_gen = Rcpp::wrap(auxVarCpp(tau, rho, nu, N, R, J, rho_mat, adjacency, cov_i, weights, group_lengths, group_functions, additional_nu));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -150,7 +151,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_autognet_oneMultinomCall", (DL_FUNC) &_autognet_oneMultinomCall, 1},
     {"_autognet_oneMultinomC", (DL_FUNC) &_autognet_oneMultinomC, 1},
     {"_autognet_callRMultinom", (DL_FUNC) &_autognet_callRMultinom, 1},
-    {"_autognet_auxVarCpp", (DL_FUNC) &_autognet_auxVarCpp, 12},
+    {"_autognet_auxVarCpp", (DL_FUNC) &_autognet_auxVarCpp, 13},
     {"_autognet_auxVarOutcomeCpp", (DL_FUNC) &_autognet_auxVarOutcomeCpp, 8},
     {"_autognet_networkGibbsOutCovCpp", (DL_FUNC) &_autognet_networkGibbsOutCovCpp, 14},
     {"_autognet_networkGibbsOuts1Cpp", (DL_FUNC) &_autognet_networkGibbsOuts1Cpp, 10},

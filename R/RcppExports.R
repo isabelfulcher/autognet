@@ -20,7 +20,7 @@ callRMultinom <- function(x) {
 #'
 #' @param tau A numeric vector for the intercept terms in the covariate model
 #' @param rho A numeric vector for the correlation terms in the covariate model
-#' @param nu A numberic vector for the neighbor terms in the covariate model
+#' @param nu A numberic matrix for the neighbor terms in the covariate model
 #' @param N An integer indicating the size of the interconnected network
 #' @param R An integer indicating the number of iterations for the Gibbs
 #' @param J An integer for the number of covariates
@@ -30,13 +30,14 @@ callRMultinom <- function(x) {
 #' @param weights A numeric vector indicating the number of neighbors for each node
 #' @param group_lengths An integer vector indicating the number of categories for each variable
 #' @param group_functions An integer vector indicating the type of variable
+#' @param additional_nu An integer (0/1) specifying whether neighbor cross terms will be evaluated (i.e. non zero)
 #' @return A numeric matrix for auxiliary covariate values
 #' between [0,1]
 #'
 #'
 #' @export
-auxVarCpp <- function(tau, rho, nu, N, R, J, rho_mat, adjacency, cov_i, weights, group_lengths, group_functions) {
-    .Call('_autognet_auxVarCpp', PACKAGE = 'autognet', tau, rho, nu, N, R, J, rho_mat, adjacency, cov_i, weights, group_lengths, group_functions)
+auxVarCpp <- function(tau, rho, nu, N, R, J, rho_mat, adjacency, cov_i, weights, group_lengths, group_functions, additional_nu) {
+    .Call('_autognet_auxVarCpp', PACKAGE = 'autognet', tau, rho, nu, N, R, J, rho_mat, adjacency, cov_i, weights, group_lengths, group_functions, additional_nu)
 }
 
 #' Run Gibbs sampler for auxiliary outcome values using Rcpp

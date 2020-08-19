@@ -4,8 +4,22 @@
 \alias{networkGibbsOutCovCpp}
 \title{Run Gibbs sampler for covariates to use in network causal effect estimation}
 \usage{
-networkGibbsOutCovCpp(tau, rho, nu, ncov, R, N, burnin, rho_mat, adjacency,
-  weights, cov_mat, group_lengths, group_functions, additional_nu)
+networkGibbsOutCovCpp(
+  tau,
+  rho,
+  nu,
+  ncov,
+  R,
+  N,
+  burnin,
+  rho_mat,
+  adjacency,
+  weights,
+  cov_mat,
+  group_lengths,
+  group_functions,
+  additional_nu
+)
 }
 \arguments{
 \item{tau}{A numeric vector for the intercept terms in the covariate model}

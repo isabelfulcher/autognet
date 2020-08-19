@@ -4,15 +4,28 @@
 \alias{auxVarCpp}
 \title{Run Gibbs sampler for auxiliary covariate values using Rcpp}
 \usage{
-auxVarCpp(tau, rho, nu, N, R, J, rho_mat, adjacency, cov_i, weights,
-  group_lengths, group_functions)
+auxVarCpp(
+  tau,
+  rho,
+  nu,
+  N,
+  R,
+  J,
+  rho_mat,
+  adjacency,
+  cov_i,
+  weights,
+  group_lengths,
+  group_functions,
+  additional_nu
+)
 }
 \arguments{
 \item{tau}{A numeric vector for the intercept terms in the covariate model}
 
 \item{rho}{A numeric vector for the correlation terms in the covariate model}
 
-\item{nu}{A numberic vector for the neighbor terms in the covariate model}
+\item{nu}{A numberic matrix for the neighbor terms in the covariate model}
 
 \item{N}{An integer indicating the size of the interconnected network}
 
@@ -31,6 +44,8 @@ auxVarCpp(tau, rho, nu, N, R, J, rho_mat, adjacency, cov_i, weights,
 \item{group_lengths}{An integer vector indicating the number of categories for each variable}
 
 \item{group_functions}{An integer vector indicating the type of variable}
+
+\item{additional_nu}{An integer (0/1) specifying whether neighbor cross terms will be evaluated (i.e. non zero)}
 }
 \value{
 A numeric matrix for auxiliary covariate values

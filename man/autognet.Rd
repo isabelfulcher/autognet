@@ -3,7 +3,6 @@
 \docType{package}
 \name{autognet}
 \alias{autognet}
-\alias{autognet-package}
 \title{autognet: an R package for network data effect estimations}
 \description{
 The autognet R package implements a comprehensive

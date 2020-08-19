@@ -4,8 +4,20 @@
 \alias{networkGibbsOuts2Cpp}
 \title{Estimate components for direct and spillover effects}
 \usage{
-networkGibbsOuts2Cpp(cov_list, beta, p, ncov, R, N, adjacency, weights,
-  subset, treatment_value, burnin, average)
+networkGibbsOuts2Cpp(
+  cov_list,
+  beta,
+  p,
+  ncov,
+  R,
+  N,
+  adjacency,
+  weights,
+  subset,
+  treatment_value,
+  burnin,
+  average
+)
 }
 \arguments{
 \item{cov_list}{The output from networkGibbsOutCovCpp function}

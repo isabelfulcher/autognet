@@ -4,8 +4,18 @@
 \alias{networkGibbsOuts1Cpp}
 \title{Estimate overall network causal effect}
 \usage{
-networkGibbsOuts1Cpp(cov_list, beta, p, ncov, R, N, adjacency, weights,
-  burnin, average)
+networkGibbsOuts1Cpp(
+  cov_list,
+  beta,
+  p,
+  ncov,
+  R,
+  N,
+  adjacency,
+  weights,
+  burnin,
+  average
+)
 }
 \arguments{
 \item{cov_list}{The output from networkGibbsOutCovCpp function}
